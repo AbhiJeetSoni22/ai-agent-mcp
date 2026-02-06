@@ -171,5 +171,5 @@ async function chat() {
     chat();
   });
 }
-messages = messages.slice(-20);
+messages = messages.slice(-10);
 chat();
