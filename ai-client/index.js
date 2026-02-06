@@ -56,6 +56,7 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
+let messages = [];
 async function chat() {
   rl.question("\nYou: ", async (message) => {
     try {
@@ -83,11 +84,7 @@ async function chat() {
         timeZone: "Asia/Kolkata",
       }); // YYYY-MM-DD
 
-      // 2. Build the initial history
-      let messages = [
-        {
-          role: "system",
-          content: `You are a professional assistant connected to real external tools.
+      const systemPrompt = `You are a professional assistant connected to real external tools.
 
             CONTEXT:
             - Current Date (IST): ${todayReadable}
@@ -99,6 +96,8 @@ async function chat() {
             - Convert all dates to ISO format.
             - Convert times like "5 PM" into 24-hour format (17:00:00).
             - Always generate valid ISO 8601 datetime strings when time is involved.
+            - When creating times, always include timezone offset (+05:30).
+                Do not use Z or UTC.
 
             TOOLS USAGE:
             - Use available tools whenever real-world actions or data retrieval are needed.
@@ -108,10 +107,20 @@ async function chat() {
 
             BEHAVIOR:
             - Be concise and helpful.
-            - Do not say you lack access or mention being an AI.`,
-        },
-        { role: "user", content: message },
-      ];
+            - Do not say you lack access or mention being an AI.`;
+
+      // 2. Build the initial history
+      if (messages.length === 0) {
+        messages.push({
+          role: "system",
+          content: systemPrompt,
+        });
+      }
+
+      messages.push({
+        role: "user",
+        content: message,
+      });
 
       // 3. First LLM Call
       const response = await groq.chat.completions.create({
@@ -162,4 +171,5 @@ async function chat() {
     chat();
   });
 }
+messages = messages.slice(-20);
 chat();
