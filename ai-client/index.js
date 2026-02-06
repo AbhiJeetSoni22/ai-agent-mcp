@@ -43,9 +43,6 @@ await mcpClient.connect(transport);
 /*
   Fetch available tools from server
 */
-const { tools } = await mcpClient.listTools();
-
-console.log("DEBUG tools list:", tools);
 
 console.log("✅ Connected to MCP server\n");
 
@@ -72,23 +69,46 @@ async function chat() {
           parameters: t.inputSchema,
         },
       }));
+      const now = new Date();
+
+      const todayReadable = now.toLocaleDateString("en-IN", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "Asia/Kolkata",
+      });
+
+      const todayISO = now.toLocaleDateString("en-CA", {
+        timeZone: "Asia/Kolkata",
+      }); // YYYY-MM-DD
 
       // 2. Build the initial history
       let messages = [
         {
           role: "system",
-          content: `You are a professional Google Calendar Assistant.
-    
-    CONTEXT:
-    - Today's Date: Thursday, February 5, 2026.
-    - Timezone: Indian Standard Time (IST) / UTC+5:30.
-    
-    TOOLS RULES:
-    1. For 'getEvents', always use YYYY-MM-DD format.
-    2. For 'createEvent', always use ISO 8601 strings (e.g., 2026-02-05T17:00:00).
-    3. If the user says "5 PM", convert it to "17:00:00".
-    4. You have ACTUAL access to the calendar. If a tool returns data, summarize it. 
-    5. Never say "I don't have access" or "I am an AI".`,
+          content: `You are a professional assistant connected to real external tools.
+
+            CONTEXT:
+            - Current Date (IST): ${todayReadable}
+            - ISO Date: ${todayISO}
+            - Timezone: Asia/Kolkata (UTC+5:30)
+
+            DATE & TIME LOGIC:
+            - Interpret relative words like today, tomorrow, yesterday, next week using the current date above.
+            - Convert all dates to ISO format.
+            - Convert times like "5 PM" into 24-hour format (17:00:00).
+            - Always generate valid ISO 8601 datetime strings when time is involved.
+
+            TOOLS USAGE:
+            - Use available tools whenever real-world actions or data retrieval are needed.
+            - Do NOT manually guess or fabricate results.
+            - Call tools using proper function calling format only.
+            - After a tool responds, summarize the result clearly for the user.
+
+            BEHAVIOR:
+            - Be concise and helpful.
+            - Do not say you lack access or mention being an AI.`,
         },
         { role: "user", content: message },
       ];

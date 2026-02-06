@@ -33,7 +33,11 @@ export const calendarTools = [
 
         const text = events
           .map((e) => {
-            const time = e.start.dateTime || e.start.date;
+            const time = e.start.dateTime
+              ? new Date(e.start.dateTime).toLocaleTimeString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                })
+              : e.start.date;
             return `- ${e.summary} (ID: ${e.id}) at ${time}`;
           })
           .join("\n");
@@ -137,6 +141,54 @@ export const calendarTools = [
         return {
           content: [
             { type: "text", text: `Error updating event: ${err.message}` },
+          ],
+          isError: true,
+        };
+      }
+    },
+  },
+  {
+    name: "deleteEventsByDate",
+    description: "Delete ALL calendar events for a specific date (YYYY-MM-DD)",
+    schema: z.object({
+      date: z
+        .string()
+        .describe(
+          "The date in YYYY-MM-DD format whose events should be deleted",
+        ),
+    }),
+    handler: async ({ date }) => {
+      try {
+        const events = await getEventsByDate(date);
+
+        if (!events || events.length === 0) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `No events found for ${date}. Nothing to delete.`,
+              },
+            ],
+          };
+        }
+
+        // 🔥 loop delete on server side (NOT LLM side)
+        for (const event of events) {
+          await deleteCalendarEvent(event.id);
+        }
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Successfully deleted ${events.length} events for ${date}.`,
+            },
+          ],
+        };
+      } catch (err) {
+        return {
+          content: [
+            { type: "text", text: `Error deleting events: ${err.message}` },
           ],
           isError: true,
         };
