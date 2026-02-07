@@ -62,7 +62,6 @@ export const gmailTools = [
     description: "Fetch latest unread emails from inbox",
     schema: z.any(),
 
-
     handler: async () => {
       try {
         const emails = await getUnreadEmails();
@@ -74,7 +73,12 @@ export const gmailTools = [
         }
 
         const text = emails
-          .map((e, i) => `${i + 1}. From: ${e.from}\nSubject: ${e.subject}`)
+          .map(
+            (e, i) =>
+              `${i + 1}. From: ${e.from}
+                Subject: ${e.subject}
+                ID: ${e.id}`,
+          )
           .join("\n\n");
 
         return {
