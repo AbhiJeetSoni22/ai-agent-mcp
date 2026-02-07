@@ -62,6 +62,7 @@ async function chat() {
     try {
       // 1. Fetch fresh tools
       const { tools } = await mcpClient.listTools();
+
       const groqTools = tools.map((t) => ({
         type: "function",
         function: {
@@ -104,6 +105,10 @@ async function chat() {
             - Do NOT manually guess or fabricate results.
             - Call tools using proper function calling format only.
             - After a tool responds, summarize the result clearly for the user.
+
+            IMPORTANT:
+            - Only call tools using the provided tool calling system.
+            - Never output <function> or XML-like tags.
 
             BEHAVIOR:
             - Be concise and helpful.
@@ -158,6 +163,8 @@ async function chat() {
         const finalResponse = await groq.chat.completions.create({
           model: "llama-3.3-70b-versatile",
           messages: messages,
+          tools: groqTools, // ⭐ ADD THIS
+          tool_choice: "none", // ⭐ prevent second tool call
         });
 
         console.log("\nAssistant:", finalResponse.choices[0].message.content);
@@ -171,5 +178,5 @@ async function chat() {
     chat();
   });
 }
-messages = messages.slice(-10);
+messages = messages.slice(-5);
 chat();
