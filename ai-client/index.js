@@ -145,7 +145,9 @@ async function chat() {
 
           const result = await mcpClient.callTool({
             name: call.function.name,
-            arguments: JSON.parse(call.function.arguments),
+            arguments: call.function.arguments
+              ? JSON.parse(call.function.arguments)
+              : {},
           });
 
           console.log(`[System] Tool Result Received.`);
