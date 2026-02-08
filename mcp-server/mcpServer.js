@@ -4,6 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { calendarTools } from "./tools/calendarTools.js";
 import { webSearchTools } from "./tools/webSearchTools.js";
 import { gmailTools } from "./tools/gmailTools.js";
+import { githubTools } from "./tools/githubTools.js";
 
 const server = new McpServer({
   name: "calendar-mcp-server",
@@ -18,6 +19,7 @@ const allTools = [
   ...calendarTools,
   ...webSearchTools,
   ...gmailTools,
+  ...githubTools,
 ];
 for (const tool of allTools) {
   server.registerTool(
