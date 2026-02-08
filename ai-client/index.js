@@ -127,6 +127,8 @@ async function chat() {
         content: message,
       });
 
+      // ⭐ Keep only last 20 messages (memory control)
+      messages = [messages[0], ...messages.slice(-20)];
       // 3. First LLM Call
       const response = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
@@ -180,5 +182,5 @@ async function chat() {
     chat();
   });
 }
-messages = messages.slice(-5);
+
 chat();
