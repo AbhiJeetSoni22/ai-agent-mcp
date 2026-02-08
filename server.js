@@ -113,6 +113,13 @@ app.post("/chat", async (req, res) => {
             - Only call tools using the provided tool calling system.
             - Never output <function> or XML-like tags.
 
+            TOOL SAFETY RULES:
+
+            - NEVER call a tool if required parameters are missing.
+            - If information is incomplete, ask follow-up questions.
+            - Only call tools when ALL required fields are clearly provided.
+            - Do NOT assume or guess missing values.
+
             BEHAVIOR:
             - Be concise and helpful.
             - Do not say you lack access or mention being an AI.`;
