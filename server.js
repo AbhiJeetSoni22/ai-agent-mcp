@@ -170,10 +170,7 @@ app.post("/chat", async (req, res) => {
       },
     ];
 
-    const needsTool =
-      /(github|repo|repository|mail|email|inbox|calendar|event|create|delete|send)/i.test(
-        message,
-      );
+ 
     /* 4. First LLM Call (SAME) */
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -186,14 +183,7 @@ app.post("/chat", async (req, res) => {
     let assistantMsg = response.choices[0].message;
     // Detect tool-required queries
     console.log("assitantMsg", assistantMsg);
-    // If tool expected but not called → reject hallucination
-    if (needsTool && !assistantMsg.tool_calls) {
-      console.log("⚠️ Tool expected but not called. Forcing retry...");
-
-      return res.json({
-        reply: "Let me fetch that using the tool. Please try again.",
-      });
-    }
+ 
 
     messages.push(assistantMsg);
 
