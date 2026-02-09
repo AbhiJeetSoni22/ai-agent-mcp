@@ -50,11 +50,6 @@ await mcpClient.connect(transport);
 console.log("✅ Connected to MCP server");
 
 /* =============================
-   Messages Memory (SAME)
-============================= */
-let messages = [];
-
-/* =============================
    CHAT API (converted from readline)
 ============================= */
 app.post("/chat", async (req, res) => {
@@ -64,7 +59,43 @@ app.post("/chat", async (req, res) => {
     /* 1. Fetch fresh tools (SAME) */
     const { tools } = await mcpClient.listTools();
 
-    const groqTools = tools.map((t) => ({
+    const msg = message.toLowerCase();
+
+    let filteredTools = tools;
+
+    // GitHub
+    if (msg.includes("repo") || msg.includes("github")) {
+      filteredTools = tools.filter(
+        (t) => t.name.includes("repo") || t.name.includes("issue"),
+      );
+    }
+
+    // Gmail
+    else if (
+      msg.includes("mail") ||
+      msg.includes("email") ||
+      msg.includes("inbox")
+    ) {
+      filteredTools = tools.filter((t) => t.name.includes("email"));
+    }
+
+    // Calendar
+    else if (
+      msg.includes("event") ||
+      msg.includes("calendar") ||
+      msg.includes("meeting")
+    ) {
+      filteredTools = tools.filter((t) =>
+        t.name.toLowerCase().includes("event"),
+      );
+    }
+
+    // Default → no tools
+    else {
+      filteredTools = [];
+    }
+
+    const groqTools = filteredTools.map((t) => ({
       type: "function",
       function: {
         name: t.name,
@@ -88,7 +119,7 @@ app.post("/chat", async (req, res) => {
       timeZone: "Asia/Kolkata",
     });
 
-       const systemPrompt = `You are a professional assistant connected to real external tools.
+    const systemPrompt = `You are a professional assistant connected to real external tools.
 
             CONTEXT:
             - Current Date (IST): ${todayReadable}
@@ -105,9 +136,13 @@ app.post("/chat", async (req, res) => {
 
             TOOLS USAGE:
             - Use available tools whenever real-world actions or data retrieval are needed.
-            - Do NOT manually guess or fabricate results.
-            - Call tools using proper function calling format only.
-            - After a tool responds, summarize the result clearly for the user.
+            - If a tool exists that can answer the user's request, ALWAYS call the tool.
+            - If no tool is relevant, answer normally.
+            - NEVER say you don't have access.
+            - Authentication for GitHub, Gmail, and Calendar is already handled by the backend.
+            - Some tools (like listing GitHub repositories or unread emails) require NO parameters.
+            - Even if parameters are empty, you MUST call the tool.
+
 
             IMPORTANT:
             - Only call tools using the provided tool calling system.
@@ -124,57 +159,96 @@ app.post("/chat", async (req, res) => {
             - Be concise and helpful.
             - Do not say you lack access or mention being an AI.`;
 
-    /* 3. Build history (SAME) */
-    if (messages.length === 0) {
-      messages.push({
+    const messages = [
+      {
         role: "system",
         content: systemPrompt,
-      });
-    }
+      },
+      {
+        role: "user",
+        content: message,
+      },
+    ];
 
-    messages.push({
-      role: "user",
-      content: message,
-    });
-
-    /* memory trim (SAME) */
-    messages = [messages[0], ...messages.slice(-20)];
-
+    const needsTool =
+      /(github|repo|repository|mail|email|inbox|calendar|event|create|delete|send)/i.test(
+        message,
+      );
     /* 4. First LLM Call (SAME) */
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages,
       tools: groqTools,
+      temperature: 0,
       tool_choice: "auto",
     });
 
     let assistantMsg = response.choices[0].message;
+    // Detect tool-required queries
+    console.log("assitantMsg", assistantMsg);
+    // If tool expected but not called → reject hallucination
+    if (needsTool && !assistantMsg.tool_calls) {
+      console.log("⚠️ Tool expected but not called. Forcing retry...");
+
+      return res.json({
+        reply: "Let me fetch that using the tool. Please try again.",
+      });
+    }
+
     messages.push(assistantMsg);
 
     /* 5. Tool calls (SAME) */
     if (assistantMsg.tool_calls) {
       for (const call of assistantMsg.tool_calls) {
+        let parsedArgs = {};
+
+        if (call.function.arguments) {
+          try {
+            parsedArgs = JSON.parse(call.function.arguments) || {};
+          } catch {
+            parsedArgs = {};
+          }
+        }
+        console.log("function name is ", call.function.name);
+        console.log("agrs", parsedArgs);
         const result = await mcpClient.callTool({
           name: call.function.name,
-          arguments: call.function.arguments
-            ? JSON.parse(call.function.arguments)
-            : {},
+          arguments: parsedArgs,
         });
+        console.log("result is ", result);
 
         messages.push({
           role: "tool",
           tool_call_id: call.id,
-          content:
-            result.content?.[0]?.text || "Tool executed",
+          content: JSON.stringify(result), // ⭐ VERY IMPORTANT
         });
       }
+      messages.push({
+        role: "system",
+        content: `
+          Use ONLY the tool result JSON provided.
 
+          FORMAT RULES:
+          - Do NOT write paragraphs
+          - Use bullet points or numbered list
+          - One item per line
+          - Keep it clean and short
+          - Do NOT invent any extra data
+          - Only show fields present in the tool result
+
+          If listing:
+          - repositories → show name
+          - issues → show number, title, state, url
+          - emails → show subject + sender
+          - events → show title + time
+          `,
+      });
       /* 6. Second LLM Call (SAME) */
       const finalResponse = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         messages,
-        tools: groqTools,
         tool_choice: "none",
+        temperature: 0,
       });
 
       const reply = finalResponse.choices[0].message.content;
@@ -196,5 +270,5 @@ app.post("/chat", async (req, res) => {
    Start server
 ============================= */
 app.listen(5000, () =>
-  console.log("🚀 Backend running at http://localhost:5000")
+  console.log("🚀 Backend running at http://localhost:5000"),
 );
