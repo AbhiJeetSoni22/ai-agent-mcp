@@ -60,7 +60,7 @@ export const gmailTools = [
   {
     name: "get_unread_emails",
     description: "Fetch latest unread emails from inbox",
-    schema: z.any(),
+    schema: z.object({}).optional(),
 
     handler: async () => {
       try {
