@@ -34,6 +34,7 @@ const groq = new Groq({
    Setup MCP Client (SAME)
 ============================= */
 const serverPath = path.resolve(__dirname, "./mcp-server/mcpServer.js");
+const conversations = new Map();
 
 const transport = new StdioClientTransport({
   command: "node",
@@ -159,18 +160,16 @@ app.post("/chat", async (req, res) => {
             - Be concise and helpful.
             - Do not say you lack access or mention being an AI.`;
 
+    const sessionId = req.headers["x-session-id"] || "default";
+
+    let history = conversations.get(sessionId) || [];
+
     const messages = [
-      {
-        role: "system",
-        content: systemPrompt,
-      },
-      {
-        role: "user",
-        content: message,
-      },
+      { role: "system", content: systemPrompt },
+      ...history,
+      { role: "user", content: message },
     ];
 
- 
     /* 4. First LLM Call (SAME) */
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -183,7 +182,6 @@ app.post("/chat", async (req, res) => {
     let assistantMsg = response.choices[0].message;
     // Detect tool-required queries
     console.log("assitantMsg", assistantMsg);
- 
 
     messages.push(assistantMsg);
 
@@ -244,6 +242,13 @@ app.post("/chat", async (req, res) => {
       const reply = finalResponse.choices[0].message.content;
 
       messages.push({ role: "assistant", content: reply });
+      history.push({ role: "user", content: message });
+      history.push({ role: "assistant", content: reply });
+
+      // keep last 10 only
+      history = history.slice(-10);
+
+      conversations.set(sessionId, history);
 
       return res.json({ reply });
     }

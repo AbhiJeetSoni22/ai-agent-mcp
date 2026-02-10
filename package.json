@@ -4,11 +4,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "server": "node mcp-server/mcpServer.js",
+    "server": "node src/server.js",
     "client": "node ai-client/index.js",
     "dev": "node --watch mcp-server/mcpServer.js",
     "token": "node scripts/getRefreshToken.js",
     "start":"node server.js"
+
   },
   "keywords": [],
   "author": "",
