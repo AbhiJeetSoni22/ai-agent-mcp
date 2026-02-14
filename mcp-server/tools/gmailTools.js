@@ -65,7 +65,7 @@ export const gmailTools = [
     handler: async () => {
       try {
         const emails = await getUnreadEmails();
-
+        console.log('running get email tool function')
         if (!emails.length) {
           return {
             content: [{ type: "text", text: "No unread emails 🎉" }],

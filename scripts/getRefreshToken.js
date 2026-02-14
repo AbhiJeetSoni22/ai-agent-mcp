@@ -13,7 +13,11 @@ const oauth2Client = new google.auth.OAuth2(
   "http://localhost",
 );
 
-const SCOPES = ["https://www.googleapis.com/auth/calendar"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/gmail.send",
+];
 
 // Step 1: Generate URL
 const authUrl = oauth2Client.generateAuthUrl({
