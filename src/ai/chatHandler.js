@@ -1,16 +1,28 @@
 import { groq } from "../config/groqClient.js";
 import { mcpClient } from "../config/mcpClient.js";
-import { filterTools } from "./toolFilter.js";
-import { buildSystemPrompt } from "./prompts.js";
+import { buildSystemPrompt, classifyIntent } from "./prompts.js";
 import { executeToolCalls } from "./toolExecutor.js";
 
 const conversations = new Map(); // ⭐ GLOBAL MEMORY
 
 export async function handleChat(message, sessionId) {
   const { tools } = await mcpClient.listTools();
+  const intent = await classifyIntent(message);
 
-  const filtered = filterTools(tools, message);
-  
+  let filtered = [];
+
+  if (intent === "gmail")
+    filtered = tools.filter((t) => t.name.includes("email"));
+  else if (intent === "calendar")
+    filtered = tools.filter((t) => t.name.toLowerCase().includes("event"));
+  else if (intent === "github")
+    filtered = tools.filter(
+      (t) => t.name.includes("repo") || t.name.includes("issue"),
+    );
+  else if (intent === "web_search")
+    filtered = tools.filter((t) => t.name === "web_search");
+  else filtered = [];
+
   const groqTools = filtered.map((t) => ({
     type: "function",
     function: {
@@ -19,7 +31,7 @@ export async function handleChat(message, sessionId) {
       parameters: t.inputSchema,
     },
   }));
- 
+
   let history = conversations.get(sessionId) || [];
 
   const messages = [
@@ -60,5 +72,5 @@ export async function handleChat(message, sessionId) {
 
   conversations.set(sessionId, history);
 
-  return reply;   // ⭐ return only string
+  return reply; // ⭐ return only string
 }
