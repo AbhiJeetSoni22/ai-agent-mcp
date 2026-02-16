@@ -3,7 +3,7 @@ import { mcpClient } from "../config/mcpClient.js";
 import { buildSystemPrompt, classifyIntent } from "./prompts.js";
 import { executeToolCalls } from "./toolExecutor.js";
 
-const conversations = new Map(); // ⭐ GLOBAL MEMORY
+const conversations = new Map();
 
 export async function handleChat(message, sessionId) {
   const { tools } = await mcpClient.listTools();
