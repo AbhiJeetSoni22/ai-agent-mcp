@@ -1,3 +1,5 @@
+import { groq } from "../config/groqClient";
+
 export function buildSystemPrompt() {
   const now = new Date();
 
