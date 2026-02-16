@@ -5,11 +5,10 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   try {
-    const message = req.body.message
- const sessionId = req.headers["x-session-id"] || "default";
-const reply = await handleChat(message, sessionId);
-
-    res.json({ reply });
+    const message = req.body.message;
+    const sessionId = req.headers["x-session-id"] || "default";
+    const result = await handleChat(message, sessionId);
+    res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

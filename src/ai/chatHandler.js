@@ -51,9 +51,25 @@ export async function handleChat(message, sessionId) {
 
   const assistantMsg = first.choices[0].message;
 
-  if (!assistantMsg.tool_calls) return assistantMsg.content;
+  if (!assistantMsg.tool_calls) {
+  history.push({ role: "user", content: message });
+  history.push({ role: "assistant", content: assistantMsg.content });
+
+  conversations.set(sessionId, history.slice(-10));
+
+  return {
+    reply: assistantMsg.content,
+    toolsUsed: [],
+  };
+}
 
   messages.push(assistantMsg);
+
+  // 👇 Capture tool names
+const toolsUsed = assistantMsg.tool_calls.map(
+  (t) => t.function.name
+);
+
 
   const toolMsgs = await executeToolCalls(mcpClient, assistantMsg.tool_calls);
 
@@ -75,5 +91,8 @@ export async function handleChat(message, sessionId) {
 
   conversations.set(sessionId, history);
 
-  return reply; // ⭐ return only string
+ return {
+  reply,
+  toolsUsed,
+};// ⭐ return only string
 }
