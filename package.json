@@ -4,12 +4,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "server": "node src/server.js",
     "client": "node ai-client/index.js",
-    "dev": "node --watch mcp-server/mcpServer.js",
+    "dev": "nodemon src/server.js",
     "token": "node scripts/getRefreshToken.js",
-    "start":"node server.js"
-
+    "start": "node src/server.js"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +22,7 @@
     "express": "^5.2.1",
     "googleapis": "^171.4.0",
     "groq-sdk": "^0.37.0",
+    "nodemon": "^3.1.11",
     "readline": "^1.3.0",
     "zod": "^4.3.6",
     "zod-to-json-schema": "^3.25.1"
