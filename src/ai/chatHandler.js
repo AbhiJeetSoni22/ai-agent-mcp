@@ -8,7 +8,7 @@ const conversations = new Map();
 export async function handleChat(message, sessionId) {
   const { tools } = await mcpClient.listTools();
   const intent = await classifyIntent(message);
-
+  console.log('intent based on ',intent)
   let filtered = [];
 
   if (intent === "gmail")
@@ -31,6 +31,8 @@ export async function handleChat(message, sessionId) {
       parameters: t.inputSchema,
     },
   }));
+
+  
 
   let history = conversations.get(sessionId) || [];
 
@@ -62,6 +64,7 @@ export async function handleChat(message, sessionId) {
     messages,
     temperature: 0,
   });
+
 
   const reply = finalResponse.choices[0].message.content;
 
