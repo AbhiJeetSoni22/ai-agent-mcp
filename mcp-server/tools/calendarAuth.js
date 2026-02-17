@@ -2,7 +2,7 @@
 import { google } from "googleapis";
 import "dotenv/config"; // Ensure this is at the very top
 
-// Debug: Check if variables are actually loading (only for this test)
+
 if (!process.env.GOOGLE_CLIENT_ID) {
   console.error("❌ ERROR: GOOGLE_CLIENT_ID is missing from process.env!");
 }

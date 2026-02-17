@@ -15,7 +15,7 @@ export const calendarTools = [
   {
     name: "getEvents",
     description: "Get all calendar events for a specific date (YYYY-MM-DD)",
-    // We wrap the schema in z.object so the MCP SDK can parse it into JSON Schema
+   
     schema: z.object({
       date: z
         .string()
