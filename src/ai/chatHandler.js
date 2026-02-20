@@ -7,7 +7,7 @@ const conversations = new Map();
 
 export async function handleChat(message, sessionId) {
   const { tools } = await mcpClient.listTools();
-  console.log('tools are',tools)
+
   const intent = await classifyIntent(message);
   console.log('intent based on ',intent)
   
