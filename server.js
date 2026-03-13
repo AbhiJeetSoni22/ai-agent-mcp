@@ -197,8 +197,7 @@ app.post("/chat", async (req, res) => {
             parsedArgs = {};
           }
         }
-        console.log("function name is ", call.function.name);
-        console.log("agrs", parsedArgs);
+       
         const result = await mcpClient.callTool({
           name: call.function.name,
           arguments: parsedArgs,

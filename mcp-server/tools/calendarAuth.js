@@ -1,6 +1,6 @@
 // mcp-server/tools/calendarAuth.js
 import { google } from "googleapis";
-import "dotenv/config"; // Ensure this is at the very top
+import "dotenv/config"; 
 
 
 if (!process.env.GOOGLE_CLIENT_ID) {
