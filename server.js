@@ -71,14 +71,6 @@ app.post("/chat", async (req, res) => {
       );
     }
 
-    // Gmail
-    else if (
-      msg.includes("mail") ||
-      msg.includes("email") ||
-      msg.includes("inbox")
-    ) {
-      filteredTools = tools.filter((t) => t.name.includes("email"));
-    }
 
     // Calendar
     else if (
