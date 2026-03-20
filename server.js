@@ -114,10 +114,7 @@ app.post("/chat", async (req, res) => {
 
     const systemPrompt = `You are a professional assistant connected to real external tools.
 
-            CONTEXT:
-            - Current Date (IST): ${todayReadable}
-            - ISO Date: ${todayISO}
-            - Timezone: Asia/Kolkata (UTC+5:30)
+
 
             DATE & TIME LOGIC:
             - Interpret relative words like today, tomorrow, yesterday, next week using the current date above.
