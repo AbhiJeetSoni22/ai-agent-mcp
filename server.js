@@ -169,8 +169,7 @@ app.post("/chat", async (req, res) => {
     });
 
     let assistantMsg = response.choices[0].message;
-    // Detect tool-required queries
-    console.log("assitantMsg", assistantMsg);
+
 
     messages.push(assistantMsg);
 
