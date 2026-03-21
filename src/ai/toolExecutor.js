@@ -20,7 +20,7 @@ export async function executeToolCalls(mcpClient, calls) {
     results.push({
       role: "tool",
       tool_call_id: call.id,
-      content: JSON.stringify(result),
+  content: JSON.stringify(result.content || result)
     });
   }
 
