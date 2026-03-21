@@ -4,7 +4,14 @@ import chatRoute from "./routes/chat.route.js";
 import "dotenv/config";
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "x-session-id"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 app.use("/chat", chatRoute);
