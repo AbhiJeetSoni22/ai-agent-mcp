@@ -1,4 +1,4 @@
-async function selectRelevantTools(message, tools) {
+export async function selectRelevantTools(message, tools) {
   const toolList = tools.map((t) => ({
     name: t.name,
     description: t.description,
