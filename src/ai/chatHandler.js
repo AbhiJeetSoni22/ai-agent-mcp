@@ -1,30 +1,24 @@
 import { groq } from "../config/groqClient.js";
 import { mcpClient } from "../config/mcpClient.js";
-import { classifyIntent } from "./classifyIntent.js";
+
 import { buildSystemPrompt} from "./prompts.js";
+import { classifyIntent } from "./services/classifyIntent.js";
+import { selectRelevantTools } from "./services/releventToolSelection.js";
 import { executeToolCalls } from "./toolExecutor.js";
 
 const conversations = new Map();
 
 export async function handleChat(message, sessionId) {
   const { tools } = await mcpClient.listTools();
-
+  console.log('message ',message)
   const intent = await classifyIntent(message);
   console.log('intent based on ',intent)
   
-  let filtered = [];
+  const selectedToolNames = await selectRelevantTools(message, tools);
 
-  if (intent === "gmail")
-    filtered = tools.filter((t) => t.name.includes("email"));
-  else if (intent === "calendar")
-    filtered = tools.filter((t) => t.name.toLowerCase().includes("event"));
-  else if (intent === "github")
-    filtered = tools.filter(
-      (t) => t.name.includes("repo") || t.name.includes("issue"),
-    );
-  else if (intent === "web_search")
-    filtered = tools.filter((t) => t.name === "web_search");
-  else filtered = [];
+const filtered = tools.filter((t) =>
+  selectedToolNames.includes(t.name)
+);
 
   const groqTools = filtered.map((t) => ({
     type: "function",
@@ -93,7 +87,7 @@ const toolsUsed = assistantMsg.tool_calls.map(
   history = history.slice(-10);
 
   conversations.set(sessionId, history);
-
+ console.log('reply ',reply)
  return {
   reply,
   toolsUsed,
