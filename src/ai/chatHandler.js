@@ -1,9 +1,9 @@
 import { groq } from "../config/groqClient.js";
 import { mcpClient } from "../config/mcpClient.js";
 
-import { buildSystemPrompt } from "./prompts.js";
+import { buildSystemPrompt, finalResponseContent } from "./prompts.js";
 
-import { selectRelevantTools } from "./services/releventToolSelection.js";
+import { selectRelevantTools } from "./services/ToolSelection.js";
 import { executeToolCalls } from "./toolExecutor.js";
 
 const conversations = new Map();
@@ -79,11 +79,17 @@ if (filtered.length === 0) {
 
   messages.push(...toolMsgs);
 
-  const finalResponse = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    messages,
-    temperature: 0,
-  });
+const finalResponse = await groq.chat.completions.create({
+  model: "llama-3.3-70b-versatile",
+  messages: [
+    {
+      role: "system",
+      content: finalResponseContent,
+    },
+    ...messages,
+  ],
+  temperature: 0.7,
+});
 
   const reply = finalResponse.choices[0].message.content;
 
