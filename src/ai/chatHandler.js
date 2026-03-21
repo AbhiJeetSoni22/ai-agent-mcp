@@ -1,6 +1,7 @@
 import { groq } from "../config/groqClient.js";
 import { mcpClient } from "../config/mcpClient.js";
-import { buildSystemPrompt, classifyIntent } from "./prompts.js";
+import { classifyIntent } from "./classifyIntent.js";
+import { buildSystemPrompt} from "./prompts.js";
 import { executeToolCalls } from "./toolExecutor.js";
 
 const conversations = new Map();
