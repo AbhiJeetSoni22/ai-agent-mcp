@@ -1,4 +1,3 @@
-
 import { groq } from "../config/groqClient.js";
 import { mcpClient } from "../config/mcpClient.js";
 import { redis } from "../config/redisClient.js";
@@ -12,21 +11,33 @@ import { executeToolCalls } from "./toolExecutor.js";
 const getHistory = async (sessionId) => {
   try {
     const data = await redis.get(sessionId);
-    return data ? JSON.parse(data) : [];
+
+    if (!data) return [];
+
+    // 🧠 Case 1: Already parsed object (Upstash sometimes)
+    if (typeof data === "object") {
+      return data;
+    }
+
+    // 🧠 Case 2: String JSON
+    if (typeof data === "string") {
+      return JSON.parse(data);
+    }
+
+    return [];
   } catch (err) {
-    console.log("Redis get error:", err.message);
+    console.log("Redis parse error:", err.message);
     return [];
   }
 };
 
 const saveHistory = async (sessionId, history) => {
   try {
-    await redis.set(
-      sessionId,
-      JSON.stringify(history.slice(-10)), // last 10 messages
-      "EX",
-      3600 // ⏱ 1 hour expiry (optional but recommended)
-    );
+    if (!Array.isArray(history)) return;
+
+    await redis.set(sessionId, JSON.stringify(history.slice(-10)), {
+      ex: 3600,
+    });
   } catch (err) {
     console.log("Redis save error:", err.message);
   }
@@ -48,9 +59,7 @@ export async function handleChat(message, sessionId) {
     console.log("Tool selection error:", err.message);
   }
 
-  let filtered = tools.filter((t) =>
-    selectedToolNames.includes(t.name)
-  );
+  let filtered = tools.filter((t) => selectedToolNames.includes(t.name));
 
   if (filtered.length === 0) {
     console.log("No tools selected → fallback to all tools");
@@ -101,14 +110,9 @@ export async function handleChat(message, sessionId) {
   /* ===== TOOL EXECUTION ===== */
   messages.push(assistantMsg);
 
-  const toolsUsed = assistantMsg.tool_calls.map(
-    (t) => t.function.name
-  );
+  const toolsUsed = assistantMsg.tool_calls.map((t) => t.function.name);
 
-  const toolMsgs = await executeToolCalls(
-    mcpClient,
-    assistantMsg.tool_calls
-  );
+  const toolMsgs = await executeToolCalls(mcpClient, assistantMsg.tool_calls);
 
   messages.push(...toolMsgs);
 
