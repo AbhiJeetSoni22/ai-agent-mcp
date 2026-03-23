@@ -1,3 +1,4 @@
+import { redis } from "../config/redisClient.js";
 import { groq } from "../config/groqClient.js";
 import { mcpClient } from "../config/mcpClient.js";
 
@@ -6,7 +7,14 @@ import { buildSystemPrompt, finalResponseContent } from "./prompts.js";
 import { selectRelevantTools } from "./services/ToolSelection.js";
 import { executeToolCalls } from "./toolExecutor.js";
 
-const conversations = new Map();
+const getHistory = async (sessionId) => {
+  const data = await redis.get(sessionId);
+  return data ? JSON.parse(data) : [];
+};
+
+const saveHistory = async (sessionId, history) => {
+  await redis.set(sessionId, JSON.stringify(history.slice(-10)));
+};
 
 export async function handleChat(message, sessionId) {
   const { tools } = await mcpClient.listTools();
