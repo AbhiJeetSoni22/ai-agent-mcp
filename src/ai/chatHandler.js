@@ -84,6 +84,7 @@ export async function handleChat(message, sessionId) {
     { role: "user", content: message },
   ];
 
+  console.log('calling tool ',groqTools)
   /* ===== FIRST LLM CALL ===== */
   const first = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
@@ -130,7 +131,7 @@ export async function handleChat(message, sessionId) {
   });
 
   const reply = finalResponse.choices[0].message.content;
-
+  console.log('reply is ',reply)
   /* ===== SAVE HISTORY ===== */
   history.push({ role: "user", content: message });
   history.push({ role: "assistant", content: reply });
