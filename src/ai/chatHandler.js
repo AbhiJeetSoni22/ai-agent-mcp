@@ -113,7 +113,11 @@ export async function handleChat(message, sessionId) {
 
   const toolsUsed = assistantMsg.tool_calls.map((t) => t.function.name);
 
-  const toolMsgs = await executeToolCalls(mcpClient, assistantMsg.tool_calls);
+  const toolMsgs = await executeToolCalls(
+  mcpClient,
+  assistantMsg.tool_calls,
+  sessionId // 🔥 treat as userId
+);
 
   messages.push(...toolMsgs);
 

@@ -1,28 +1,32 @@
-export async function executeToolCalls(mcpClient, calls) {
-  const results = [];
+import { getGoogleClient } from "../services/googleService.js";
 
-  for (const call of calls) {
-    let parsedArgs = {};
+export const executeToolCalls = async (mcpClient, toolCalls, userId) => {
+  const toolMessages = [];
 
-        if (call.function.arguments) {
-          try {
-            parsedArgs = JSON.parse(call.function.arguments) || {};
-          } catch {
-            parsedArgs = {};
-          }
-        }
-  
-    const result = await mcpClient.callTool({
-      name: call.function.name,
-      arguments:parsedArgs,
-    });
+  for (const call of toolCalls) {
+    const toolName = call.function.name;
+    const args = JSON.parse(call.function.arguments);
 
-    results.push({
+    let result;
+
+    // 🔥 Inject user-specific Google client
+    if (toolName.includes("gmail") || toolName.includes("calendar")) {
+      const authClient = await getGoogleClient(userId);
+
+      result = await mcpClient.callTool(toolName, {
+        ...args,
+        auth: authClient, // 🔥 inject here
+      });
+    } else {
+      result = await mcpClient.callTool(toolName, args);
+    }
+
+    toolMessages.push({
       role: "tool",
-      tool_call_id: call.id,
-  content: JSON.stringify(result.content || result)
+      tool_name: toolName,
+      content: JSON.stringify(result),
     });
   }
 
-  return results;
-}
+  return toolMessages;
+};
