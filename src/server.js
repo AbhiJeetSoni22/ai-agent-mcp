@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import chatRoute from "./routes/chat.route.js";
 import "dotenv/config";
+import { connectDB } from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
 const app = express();
 
 app.use(
@@ -13,7 +15,8 @@ app.use(
   })
 );
 app.use(express.json());
-
+connectDB();
+app.use("/auth", authRoutes);
 app.use("/chat", chatRoute);
 
 app.listen(5000, () =>
