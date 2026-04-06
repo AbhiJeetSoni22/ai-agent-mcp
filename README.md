@@ -38,8 +38,22 @@ Create a `.env` file in the project root with at least the following values:
 - `GOOGLE_CLIENT_SECRET`
 - `GOOGLE_REFRESH_TOKEN` (used by Google API helpers)
 - `GROQ_API_KEY` (for GROQ client)
+- `JWT_SECRET` (used to sign auth cookies for frontend sessions)
 
 Other env values may be required depending on additional integrations you enable.
+
+**Authentication & User Management**
+This backend now includes Google OAuth authentication with JWT-based sessions.
+
+- `GET /auth/google` redirects the user to Google OAuth consent.
+- `GET /auth/google/callback` handles Google callback, stores user data, issues a `token` cookie, and redirects to the frontend at `http://localhost:5173/chat`.
+- `GET /auth/me` returns the authenticated user when the request includes a valid cookie.
+- `GET /auth/logout` clears the auth cookie and logs the user out.
+
+The authentication middleware is implemented in `src/middleware/authMiddleware.js` and verifies JWT tokens stored in an HTTP-only cookie named `token`.
+
+**CORS and session support**
+The server is configured in `src/server.js` to allow requests from `http://localhost:5173` and to accept credentials so the frontend can send and receive auth cookies.
 
 **Install & Run**
 Prerequisites: Node.js (v18+ recommended) and npm.
