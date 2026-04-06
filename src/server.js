@@ -4,6 +4,9 @@ import chatRoute from "./routes/chat.route.js";
 import "dotenv/config";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import cookieParser from "cookie-parser";
+
+
 const app = express();
 
 app.use(
@@ -15,6 +18,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser());
 connectDB();
 app.use("/auth", authRoutes);
 app.use("/chat", chatRoute);

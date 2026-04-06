@@ -1,7 +1,7 @@
 import { oauth2Client } from "../config/googleOAuth.js";
 import { User } from "../models/User.js";
 import { google } from "googleapis";
-
+import jwt from "jsonwebtoken";
 /* 🔹 Step 1: Redirect to Google */
 export const googleLogin = (req, res) => {
   const url = oauth2Client.generateAuthUrl({

@@ -47,7 +47,7 @@ const saveHistory = async (sessionId, history) => {
 
 export async function handleChat(message, sessionId) {
   const { tools } = await mcpClient.listTools();
-  console.log("message:", message);
+  
 
   /* ===== Tool Selection ===== */
   let selectedToolNames = [];
@@ -84,7 +84,6 @@ export async function handleChat(message, sessionId) {
     { role: "user", content: message },
   ];
 
-  console.log('calling tool ',groqTools)
   /* ===== FIRST LLM CALL ===== */
   const first = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
@@ -135,14 +134,14 @@ export async function handleChat(message, sessionId) {
   });
 
   const reply = finalResponse.choices[0].message.content;
-  console.log('reply is ',reply)
+ 
   /* ===== SAVE HISTORY ===== */
   history.push({ role: "user", content: message });
   history.push({ role: "assistant", content: reply });
 
   await saveHistory(sessionId, history);
 
-  console.log("reply:", reply);
+
 
   return {
     reply,
