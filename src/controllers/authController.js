@@ -47,8 +47,21 @@ export const googleCallback = async (req, res) => {
       },
       { upsert: true, new: true }
     );
+    const token = jwt.sign(
+  { userId: user.googleId },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
 
-    res.send("✅ Login successful!");
+// 🍪 Send cookie
+res.cookie("token", token, {
+  httpOnly: true,
+  secure: false, // production me true
+});
+
+res.redirect("http://localhost:5173/chat");
+
+   
   } catch (err) {
     console.log(err);
     res.status(500).send("OAuth Error");
