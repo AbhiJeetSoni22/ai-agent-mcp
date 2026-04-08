@@ -1,7 +1,5 @@
 import { google } from "googleapis";
-import { oauth2Client } from "../config/googleOAuth.js";
 import { User } from "../models/User.js";
-
 
 export const getGoogleClient = async (userId) => {
   const user = await User.findOne({ googleId: userId });
@@ -10,22 +8,16 @@ export const getGoogleClient = async (userId) => {
     throw new Error("User not authenticated with Google");
   }
 
-  const client = createOAuthClient({
+  const oAuth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    "http://localhost:5000/auth/google/callback"
+  );
+
+  oAuth2Client.setCredentials({
     access_token: user.access_token,
     refresh_token: user.refresh_token,
   });
 
-  return client;
-};
-export const getAuthClient = async (userId) => {
-  const user = await User.findById(userId);
-
-  if (!user) throw new Error("User not found");
-
-  oauth2Client.setCredentials({
-    access_token: user.access_token,
-    refresh_token: user.refresh_token,
-  });
-
-  return oauth2Client;
+  return oAuth2Client;
 };

@@ -1,15 +1,15 @@
 import express from "express";
 import { handleChat } from "../ai/chatHandler.js";
-import authMiddleware from "../middleware/authMiddleware.js";
+import {verifyUser} from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", verifyUser, async (req, res) => {
   try {
     const message = req.body.message;
     const sessionId = req.headers["x-session-id"] || "default";
     const userId = req.user.userId; // 🔥 IMPORTANT
-
+    console.log('userId is ',userId)
     const result = await handleChat(message, sessionId, userId);
 
     res.json(result);

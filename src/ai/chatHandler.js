@@ -45,7 +45,7 @@ const saveHistory = async (sessionId, history) => {
 
 /* ================= MAIN HANDLER ================= */
 
-export async function handleChat(message, sessionId) {
+export async function handleChat(message, sessionId, userId) {
   const { tools } = await mcpClient.listTools();
   console.log('getting message', message)
 
@@ -76,7 +76,7 @@ export async function handleChat(message, sessionId) {
     },
   }));
 
-  console.log('groq tools ', groqTools)
+
 
   /* ===== REDIS HISTORY ===== */
   let history = await getHistory(sessionId);
@@ -114,12 +114,13 @@ export async function handleChat(message, sessionId) {
   messages.push(assistantMsg);
 
   const toolsUsed = assistantMsg.tool_calls.map((t) => t.function.name);
-
-  const toolMsgs = await executeToolCalls(
-    mcpClient,
-    assistantMsg.tool_calls,
-    sessionId // 🔥 treat as userId
-  );
+  console.log('toolUsed ',toolsUsed)
+ const toolMsgs = await executeToolCalls(
+  mcpClient,
+  assistantMsg.tool_calls,
+  userId // 🔥 FIX
+);
+console.log('toolMsg',toolMsg)
 
   messages.push(...toolMsgs);
 

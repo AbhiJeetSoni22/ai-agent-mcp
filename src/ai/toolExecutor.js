@@ -1,24 +1,25 @@
-import { getGoogleClient } from "../services/googleService.js";
 
 export const executeToolCalls = async (mcpClient, toolCalls, userId) => {
   const toolMessages = [];
 
   for (const call of toolCalls) {
     const toolName = call.function.name;
+
     const args = JSON.parse(call.function.arguments);
 
     let result;
 
-    // 🔥 Inject user-specific Google client
-    if (toolName.includes("gmail") || toolName.includes("calendar")) {
-      const authClient = await getGoogleClient(userId);
-
+    try {
       result = await mcpClient.callTool(toolName, {
         ...args,
-        auth: authClient, // 🔥 inject here
+        userId, // 🔥 ONLY THIS
       });
-    } else {
-      result = await mcpClient.callTool(toolName, args);
+    } catch (err) {
+      console.error("❌ TOOL ERROR:", toolName, err.message);
+
+      result = {
+        error: "Tool execution failed",
+      };
     }
 
     toolMessages.push({

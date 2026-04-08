@@ -1,4 +1,5 @@
-import { calendar } from "../tools/calendarAuth.js";
+import { google } from "googleapis";
+import { getGoogleClient } from "../../src/services/googleService.js";
 
 /**
  * Ensures a date string is in proper ISO 8601 format for Google.
@@ -10,18 +11,19 @@ function formatToISO(dateStr) {
   return d.toISOString();
 }
 
-export async function getEventsByDate(date) {
-  // 1. Parse the date and force it to the start of that day in UTC
+export async function getEventsByDate(date, userId) {
+  const authClient = await getGoogleClient(userId);
+
+  const calendar = google.calendar({
+    version: "v3",
+    auth: authClient,
+  });
+
   const start = new Date(date);
   start.setUTCHours(0, 0, 0, 0);
 
-  // 2. Set the end to the very end of that same day in UTC
   const end = new Date(date);
   end.setUTCHours(23, 59, 59, 999);
-
-  console.log(
-    `[Debug] Searching from: ${start.toISOString()} to ${end.toISOString()}`,
-  );
 
   const res = await calendar.events.list({
     calendarId: "primary",
@@ -33,46 +35,56 @@ export async function getEventsByDate(date) {
 
   return res.data.items || [];
 }
-export async function createCalendarEvent(title, startTime, endTime) {
-  try {
-    const res = await calendar.events.insert({
-      calendarId: "primary",
-      requestBody: {
-        summary: title,
-        start: {
-          dateTime: startTime,   // ✅ send directly
-        },
-        end: {
-          dateTime: endTime,     // ✅ send directly
-        },
-      },
-    });
+export async function createCalendarEvent(title, startTime, endTime, userId) {
+  const authClient = await getGoogleClient(userId);
 
-    return res.data.id;
-  } catch (error) {
-    throw new Error(
-      `Google API Reject: ${error.response?.data?.error?.message || error.message}`
-    );
-  }
+  const calendar = google.calendar({
+    version: "v3",
+    auth: authClient,
+  });
+
+  const res = await calendar.events.insert({
+    calendarId: "primary",
+    requestBody: {
+      summary: title,
+      start: { dateTime: startTime },
+      end: { dateTime: endTime },
+    },
+  });
+
+  return res.data.id;
 }
 
 
-export async function deleteCalendarEvent(eventId) {
+export async function deleteCalendarEvent(eventId, userId) {
+  const authClient = await getGoogleClient(userId);
+
+  const calendar = google.calendar({
+    version: "v3",
+    auth: authClient,
+  });
+
   await calendar.events.delete({
     calendarId: "primary",
     eventId,
   });
 }
 
-export async function updateCalendarEvent(eventId, newTime) {
-  // 1. Get current event to preserve other details (like title)
+export async function updateCalendarEvent(eventId, newTime, userId) {
+  const authClient = await getGoogleClient(userId);
+
+  const calendar = google.calendar({
+    version: "v3",
+    auth: authClient,
+  });
+
   const event = await calendar.events.get({
     calendarId: "primary",
     eventId,
   });
 
   const start = new Date(newTime);
-  const end = new Date(start.getTime() + 60 * 60 * 1000); // Default 1 hour duration
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
 
   await calendar.events.update({
     calendarId: "primary",

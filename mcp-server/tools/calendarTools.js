@@ -20,8 +20,9 @@ export const calendarTools = [
       date: z
         .string()
         .describe("The date in YYYY-MM-DD format (e.g., 2026-02-05)"),
+      userId: z.string().optional(),
     }),
-    handler: async ({ date }) => {
+    handler: async ({ date,userId }) => {
       try {
         const events = await getEventsByDate(date);
 
@@ -65,10 +66,11 @@ export const calendarTools = [
         .string()
         .describe("ISO Start time (e.g., 2026-02-05T10:00:00Z)"),
       endTime: z.string().describe("ISO End time (e.g., 2026-02-05T11:00:00Z)"),
+       userId: z.string().optional(),
     }),
-    handler: async ({ title, startTime, endTime }) => {
+    handler: async ({ title, startTime, endTime,userId }) => {
       try {
-        const eventId = await createCalendarEvent(title, startTime, endTime);
+        const eventId = await createCalendarEvent(title, startTime, endTime,userId);
         // If eventId is undefined, this will throw an error instead of fake success
         if (!eventId) throw new Error("Google API returned no ID");
 
@@ -96,8 +98,9 @@ export const calendarTools = [
       eventId: z
         .string()
         .describe("The unique ID of the calendar event to be deleted"),
+       userId: z.string().optional(),
     }),
-    handler: async ({ eventId }) => {
+    handler: async ({ eventId,userId }) => {
       try {
         await deleteCalendarEvent(eventId);
         return {
@@ -125,8 +128,9 @@ export const calendarTools = [
     schema: z.object({
       eventId: z.string().describe("The ID of the event you wish to update"),
       newTime: z.string().describe("The new ISO Start time for the event"),
+       userId: z.string().optional(),
     }),
-    handler: async ({ eventId, newTime }) => {
+    handler: async ({ eventId, newTime,userId }) => {
       try {
         await updateCalendarEvent(eventId, newTime);
         return {
@@ -156,6 +160,7 @@ export const calendarTools = [
         .describe(
           "The date in YYYY-MM-DD format whose events should be deleted",
         ),
+       userId: z.string().optional(),
     }),
     handler: async ({ date }) => {
       try {
