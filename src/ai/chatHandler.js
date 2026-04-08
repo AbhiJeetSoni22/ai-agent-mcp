@@ -47,7 +47,7 @@ const saveHistory = async (sessionId, history) => {
 
 export async function handleChat(message, sessionId) {
   const { tools } = await mcpClient.listTools();
-  
+  console.log('getting message', message)
 
   /* ===== Tool Selection ===== */
   let selectedToolNames = [];
@@ -55,6 +55,7 @@ export async function handleChat(message, sessionId) {
   try {
     const result = await selectRelevantTools(message, tools);
     selectedToolNames = Array.isArray(result) ? result : [];
+    console.log(selectedToolNames)
   } catch (err) {
     console.log("Tool selection error:", err.message);
   }
@@ -75,6 +76,8 @@ export async function handleChat(message, sessionId) {
     },
   }));
 
+  console.log('groq tools ', groqTools)
+
   /* ===== REDIS HISTORY ===== */
   let history = await getHistory(sessionId);
 
@@ -93,7 +96,7 @@ export async function handleChat(message, sessionId) {
   });
 
   const assistantMsg = first.choices[0].message;
-
+  console.log('assistant message', assistantMsg)
   /* ===== NO TOOL CASE ===== */
   if (!assistantMsg.tool_calls || assistantMsg.tool_calls.length === 0) {
     history.push({ role: "user", content: message });
@@ -113,10 +116,10 @@ export async function handleChat(message, sessionId) {
   const toolsUsed = assistantMsg.tool_calls.map((t) => t.function.name);
 
   const toolMsgs = await executeToolCalls(
-  mcpClient,
-  assistantMsg.tool_calls,
-  sessionId // 🔥 treat as userId
-);
+    mcpClient,
+    assistantMsg.tool_calls,
+    sessionId // 🔥 treat as userId
+  );
 
   messages.push(...toolMsgs);
 
@@ -134,7 +137,7 @@ export async function handleChat(message, sessionId) {
   });
 
   const reply = finalResponse.choices[0].message.content;
- 
+  console.log('reply is ', reply)
   /* ===== SAVE HISTORY ===== */
   history.push({ role: "user", content: message });
   history.push({ role: "assistant", content: reply });
