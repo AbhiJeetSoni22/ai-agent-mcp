@@ -46,6 +46,7 @@ const saveHistory = async (sessionId, history) => {
 /* ================= MAIN HANDLER ================= */
 
 export async function handleChat(message, sessionId, userId) {
+
   const { tools } = await mcpClient.listTools();
   console.log('getting message', message)
 
@@ -115,12 +116,12 @@ export async function handleChat(message, sessionId, userId) {
 
   const toolsUsed = assistantMsg.tool_calls.map((t) => t.function.name);
   console.log('toolUsed ',toolsUsed)
- const toolMsgs = await executeToolCalls(
+ const toolMsgs = await executeToolCalls({
   mcpClient,
-  assistantMsg.tool_calls,
-  userId // 🔥 FIX
-);
-console.log('toolMsg',toolMsg)
+  toolCalls: assistantMsg.tool_calls,
+  userId,
+});
+console.log('toolMsg',toolMsgs)
 
   messages.push(...toolMsgs);
 
