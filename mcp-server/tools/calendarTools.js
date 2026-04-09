@@ -15,15 +15,28 @@ export const calendarTools = [
   {
     name: "getEvents",
     description: "Get all calendar events for a specific date (YYYY-MM-DD)",
-   
+
     schema: z.object({
       date: z
         .string()
         .describe("The date in YYYY-MM-DD format (e.g., 2026-02-05)"),
+
+      access_token: z.string().optional(),
+      refresh_token: z.string().optional(),
     }),
-    handler: async ({ date }) => {
+    handler: async (args) => {
       try {
-        const events = await getEventsByDate(date);
+        const parsed =
+          typeof args === "string" ? JSON.parse(args) : args;
+
+        const { date, access_token, refresh_token } = parsed;
+        console.error("args", args)
+        console.error("TOKENS RECEIVED:", access_token, refresh_token);
+        const events = await getEventsByDate(
+          date,
+          access_token,
+          refresh_token
+        );
 
         if (!events || events.length === 0) {
           return {
@@ -35,8 +48,8 @@ export const calendarTools = [
           .map((e) => {
             const time = e.start.dateTime
               ? new Date(e.start.dateTime).toLocaleTimeString("en-IN", {
-                  timeZone: "Asia/Kolkata",
-                })
+                timeZone: "Asia/Kolkata",
+              })
               : e.start.date;
             return `- ${e.summary} (ID: ${e.id}) at ${time}`;
           })
@@ -65,10 +78,19 @@ export const calendarTools = [
         .string()
         .describe("ISO Start time (e.g., 2026-02-05T10:00:00Z)"),
       endTime: z.string().describe("ISO End time (e.g., 2026-02-05T11:00:00Z)"),
+
+      access_token: z.string().optional(),
+      refresh_token: z.string().optional(),
     }),
-    handler: async ({ title, startTime, endTime }) => {
+    handler: async ({ title, startTime, endTime, access_token, refresh_token }) => {
       try {
-        const eventId = await createCalendarEvent(title, startTime, endTime);
+        const eventId = await createCalendarEvent(
+          title,
+          startTime,
+          endTime,
+          access_token,
+          refresh_token
+        );
         // If eventId is undefined, this will throw an error instead of fake success
         if (!eventId) throw new Error("Google API returned no ID");
 
@@ -96,10 +118,13 @@ export const calendarTools = [
       eventId: z
         .string()
         .describe("The unique ID of the calendar event to be deleted"),
+
+      access_token: z.string().optional(),
+      refresh_token: z.string().optional(),
     }),
-    handler: async ({ eventId }) => {
+    handler: async ({ eventId, access_token, refresh_token }) => {
       try {
-        await deleteCalendarEvent(eventId);
+        await deleteCalendarEvent(eventId, access_token, refresh_token);
         return {
           content: [
             {
@@ -125,10 +150,18 @@ export const calendarTools = [
     schema: z.object({
       eventId: z.string().describe("The ID of the event you wish to update"),
       newTime: z.string().describe("The new ISO Start time for the event"),
+
+  access_token: z.string().optional(),
+  refresh_token: z.string().optional(),
     }),
-    handler: async ({ eventId, newTime }) => {
+    handler: async ({ eventId, newTime, access_token, refresh_token }) => {
       try {
-        await updateCalendarEvent(eventId, newTime);
+        await updateCalendarEvent(
+          eventId,
+          newTime,
+          access_token,
+          refresh_token
+        );
         return {
           content: [
             {
@@ -156,10 +189,18 @@ export const calendarTools = [
         .describe(
           "The date in YYYY-MM-DD format whose events should be deleted",
         ),
+
+  access_token: z.string().optional(),
+  refresh_token: z.string().optional(),
     }),
-    handler: async ({ date }) => {
+    handler: async ({ date, access_token, refresh_token }) => {
       try {
-        const events = await getEventsByDate(date);
+        const events = await getEventsByDate(
+          date,
+          access_token,
+          refresh_token
+        );
+
 
         if (!events || events.length === 0) {
           return {
@@ -174,7 +215,11 @@ export const calendarTools = [
 
         // 🔥 loop delete on server side (NOT LLM side)
         for (const event of events) {
-          await deleteCalendarEvent(event.id);
+          await deleteCalendarEvent(
+            event.id,
+            access_token,
+            refresh_token
+          );
         }
 
         return {
