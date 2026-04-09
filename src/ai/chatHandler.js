@@ -48,7 +48,7 @@ const saveHistory = async (sessionId, history) => {
 export async function handleChat(message, sessionId, userId) {
 
   const { tools } = await mcpClient.listTools();
-  console.log('getting message', message)
+
 
   /* ===== Tool Selection ===== */
   let selectedToolNames = [];
@@ -56,7 +56,7 @@ export async function handleChat(message, sessionId, userId) {
   try {
     const result = await selectRelevantTools(message, tools);
     selectedToolNames = Array.isArray(result) ? result : [];
-    console.log(selectedToolNames)
+    
   } catch (err) {
     console.log("Tool selection error:", err.message);
   }
@@ -97,7 +97,7 @@ export async function handleChat(message, sessionId, userId) {
   });
 
   const assistantMsg = first.choices[0].message;
-  console.log('assistant message', assistantMsg)
+
   /* ===== NO TOOL CASE ===== */
   if (!assistantMsg.tool_calls || assistantMsg.tool_calls.length === 0) {
     history.push({ role: "user", content: message });
@@ -115,7 +115,7 @@ export async function handleChat(message, sessionId, userId) {
   messages.push(assistantMsg);
 
   const toolsUsed = assistantMsg.tool_calls.map((t) => t.function.name);
-  console.log('toolUsed ',toolsUsed)
+ 
  const toolMsgs = await executeToolCalls({
   mcpClient,
   toolCalls: assistantMsg.tool_calls,
@@ -139,7 +139,7 @@ console.log('toolMsg',toolMsgs)
   });
 
   const reply = finalResponse.choices[0].message.content;
-  console.log('reply is ', reply)
+ 
   /* ===== SAVE HISTORY ===== */
   history.push({ role: "user", content: message });
   history.push({ role: "assistant", content: reply });

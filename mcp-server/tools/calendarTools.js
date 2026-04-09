@@ -26,9 +26,6 @@ export const calendarTools = [
     }),
     handler: async ({ date, access_token, refresh_token }) => {
       try {
-       
-
-        console.error("TOKENS RECEIVED:", access_token, refresh_token);
         const events = await getEventsByDate(
           date,
           access_token,
