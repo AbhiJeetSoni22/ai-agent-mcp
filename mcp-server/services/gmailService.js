@@ -1,14 +1,40 @@
 import { google } from "googleapis";
-import { oAuth2Client } from "../../src/config/googleClient.js";
 
+/*
+=====================================
+Create Gmail Client (PER USER)
+=====================================
+*/
+function getGmailClient(access_token, refresh_token) {
+  const oAuth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET
+  );
+
+  oAuth2Client.setCredentials({
+    access_token,
+    refresh_token,
+  });
+
+  return google.gmail({
+    version: "v1",
+    auth: oAuth2Client,
+  });
+}
 
 /*
 =====================================
 Send Email
 =====================================
 */
-export async function sendEmail(to, subject, body) {
-  const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
+export async function sendEmail(
+  to,
+  subject,
+  body,
+  access_token,
+  refresh_token
+) {
+  const gmail = getGmailClient(access_token, refresh_token);
 
   const message = [
     `To: ${to}`,
@@ -37,8 +63,11 @@ export async function sendEmail(to, subject, body) {
 Get Unread Emails
 =====================================
 */
-export async function getUnreadEmails() {
-  const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
+export async function getUnreadEmails(
+  access_token,
+  refresh_token
+) {
+  const gmail = getGmailClient(access_token, refresh_token);
 
   const res = await gmail.users.messages.list({
     userId: "me",
@@ -79,8 +108,12 @@ export async function getUnreadEmails() {
 Get Email Content
 =====================================
 */
-export async function getEmailContent(messageId) {
-  const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
+export async function getEmailContent(
+  messageId,
+  access_token,
+  refresh_token
+) {
+  const gmail = getGmailClient(access_token, refresh_token);
 
   const res = await gmail.users.messages.get({
     userId: "me",

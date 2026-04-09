@@ -24,13 +24,10 @@ export const calendarTools = [
       access_token: z.string().optional(),
       refresh_token: z.string().optional(),
     }),
-    handler: async (args) => {
+    handler: async ({ date, access_token, refresh_token }) => {
       try {
-        const parsed =
-          typeof args === "string" ? JSON.parse(args) : args;
+       
 
-        const { date, access_token, refresh_token } = parsed;
-        console.error("args", args)
         console.error("TOKENS RECEIVED:", access_token, refresh_token);
         const events = await getEventsByDate(
           date,

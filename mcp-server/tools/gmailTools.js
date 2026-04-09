@@ -24,11 +24,13 @@ export const gmailTools = [
       to: z.string().describe("Recipient email address"),
       subject: z.string().describe("Email subject"),
       body: z.string().describe("Email body content"),
+      access_token: z.string().optional(),
+      refresh_token: z.string().optional(),
     }),
 
-    handler: async ({ to, subject, body }) => {
+    handler: async ({ to, subject, body, access_token, refresh_token }) => {
       try {
-        const result = await sendEmail(to, subject, body);
+        const result = await sendEmail(to, subject, body, access_token, refresh_token);
 
         return {
           content: [
@@ -60,11 +62,14 @@ export const gmailTools = [
   {
     name: "get_unread_emails",
     description: "Fetch latest unread emails from inbox",
-    schema: z.object({}).optional(),
+    schema: z.object({
+      access_token: z.string().optional(),
+      refresh_token: z.string().optional(),
+    }),
 
-    handler: async () => {
+    handler: async ({ access_token, refresh_token }) => {
       try {
-        const emails = await getUnreadEmails();
+        const emails = await getUnreadEmails(access_token, refresh_token);
         console.log('running get email tool function')
         if (!emails.length) {
           return {
@@ -108,11 +113,13 @@ Get Email Content Tool
     description: "Read full body content of an email using its message ID",
     schema: z.object({
       messageId: z.string().describe("ID of the email message"),
+      access_token: z.string().optional(),
+      refresh_token: z.string().optional(),
     }),
 
-    handler: async ({ messageId }) => {
+    handler: async ({ messageId, access_token, refresh_token }) => {
       try {
-        const content = await getEmailContent(messageId);
+        const content = await getEmailContent(messageId, access_token, refresh_token);
 
         return {
           content: [
