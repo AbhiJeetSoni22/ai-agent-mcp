@@ -9,7 +9,7 @@ router.post("/", verifyUser, async (req, res) => {
     const message = req.body.message;
     const sessionId = req.headers["x-session-id"] || "default";
     const userId = req.user.userId; // 🔥 IMPORTANT
-    console.log('userId is ',userId)
+  
     const result = await handleChat(message, sessionId, userId);
 
     res.json(result);
