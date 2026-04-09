@@ -2,11 +2,14 @@ import { google } from "googleapis";
 import { User } from "../models/User.js";
 
 export const getGoogleClient = async (userId) => {
-  const user = await User.findOne({ googleId: userId });
+console.log("userId from JWT:", userId, typeof userId);
 
-  if (!user) {
-    throw new Error("User not authenticated with Google");
-  }
+const user = await User.findOne({ googleId: userId });
+
+console.log("User from DB:", user);
+if (!user || !user.refresh_token) {
+  throw new Error("User not authenticated with Google");
+}
 
   const oAuth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
