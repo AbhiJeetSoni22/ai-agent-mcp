@@ -7,6 +7,11 @@ const userSchema = new mongoose.Schema({
     access_token: String,
     refresh_token: String,
     expiry_date: Number,
+
+    github_token: {
+  type: String,
+  default: null,
+}
 });
 
 export const User = mongoose.model("User", userSchema);
