@@ -1,5 +1,5 @@
-import { User } from "../models/User.js"; // ✅ add this
-
+import { User } from "../models/User.js";
+import { decrypt } from "../utils/crypto.js";
 export const executeToolCalls = async ({
   toolCalls,
   mcpClient,
@@ -20,7 +20,13 @@ export const executeToolCalls = async ({
 
     // 🔥 Fetch user (for GitHub token)
     const user = await User.findOne({ googleId: userId });
-    const github_token = user?.github_token;
+
+    let github_token = user?.github_token;
+
+    // 🔓 decrypt before use
+    if (github_token) {
+      github_token = decrypt(github_token);
+    }
 
     const results = [];
 

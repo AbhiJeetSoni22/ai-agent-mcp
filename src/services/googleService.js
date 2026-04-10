@@ -1,10 +1,16 @@
 import { google } from "googleapis";
 import { User } from "../models/User.js";
-
+import { decrypt } from "../utils/crypto.js";
 export const getGoogleClient = async (userId) => {
 
 const user = await User.findOne({ googleId: userId });
+const access_token = user.access_token
+  ? decrypt(user.access_token)
+  : null;
 
+const refresh_token = user.refresh_token
+  ? decrypt(user.refresh_token)
+  : null;
 if (!user || !user.refresh_token) {
   throw new Error("User not authenticated with Google");
 }
@@ -16,8 +22,8 @@ if (!user || !user.refresh_token) {
   );
 
   oAuth2Client.setCredentials({
-    access_token: user.access_token,
-    refresh_token: user.refresh_token,
+    access_token,
+    refresh_token
   });
 
   return oAuth2Client;

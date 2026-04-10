@@ -2,6 +2,9 @@ import { oauth2Client } from "../config/googleOAuth.js";
 import { User } from "../models/User.js";
 import { google } from "googleapis";
 import jwt from "jsonwebtoken";
+import { encrypt } from "../utils/crypto.js";
+
+
 /* 🔹 Step 1: Redirect to Google */
 export const googleLogin = (req, res) => {
   const url = oauth2Client.generateAuthUrl({
@@ -36,17 +39,24 @@ export const googleCallback = async (req, res) => {
     const { data } = await oauth2.userinfo.get();
 
     // 🔥 Save or update user
-    const user = await User.findOneAndUpdate(
-      { googleId: data.id },
-      {
-        email: data.email,
-        name: data.name,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expiry_date: tokens.expiry_date,
-      },
-      { upsert: true, new: true }
-    );
+ const user = await User.findOneAndUpdate(
+  { googleId: data.id },
+  {
+    email: data.email,
+    name: data.name,
+
+    access_token: tokens.access_token
+      ? encrypt(tokens.access_token)
+      : null,
+
+    refresh_token: tokens.refresh_token
+      ? encrypt(tokens.refresh_token)
+      : existingUser?.refresh_token || null,
+
+    expiry_date: tokens.expiry_date,
+  },
+  { upsert: true, new: true }
+);
     const token = jwt.sign(
   { userId: user.googleId },
   process.env.JWT_SECRET,
