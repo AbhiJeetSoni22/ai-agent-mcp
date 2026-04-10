@@ -23,10 +23,12 @@ export const githubTools = [
     description:
       "List ALL repositories of the currently authenticated GitHub user. Do NOT ask for username. Always call this tool when user asks to list repos.",
 
-    schema: z.object({}).optional(),
+    schema: z.object({
+  github_token: z.string().optional(),
+}).optional(),
 
-    handler: async () => {
-      return await listRepos();
+    handler: async ({github_token}) => {
+      return await listRepos(github_token);
     },
   },
 
@@ -43,10 +45,11 @@ export const githubTools = [
     schema: z.object({
       name: z.string(),
       private: z.boolean().optional(),
+      github_token: z.string().optional(),
     }),
 
-    handler: async ({ name }) => {
-      return await createRepo(name);
+    handler: async ({ name ,github_token}) => {
+      return await createRepo(name,github_token);
     },
   },
 
@@ -62,10 +65,11 @@ export const githubTools = [
       repo: z.string().describe("Repository name"),
       title: z.string().describe("Issue title"),
       body: z.string().optional().describe("Issue description"),
+      github_token: z.string().optional(),
     }),
 
-    handler: async ({ repo, title, body }) => {
-      return await createIssue(repo, title, body || "");
+    handler: async ({ repo, title, body,github_token }) => {
+      return await createIssue(repo, title, body,github_token || "");
     },
   },
 
@@ -79,10 +83,11 @@ export const githubTools = [
     description: "List all issues of a repository",
     schema: z.object({
       repo: z.string().describe("Repository name"),
+      github_token: z.string().optional(),
     }),
 
-    handler: async ({ repo }) => {
-      return await listIssues(repo);
+    handler: async ({ repo,github_token }) => {
+      return await listIssues(repo,github_token);
     },
   },
 ];
