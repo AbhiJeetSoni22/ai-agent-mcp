@@ -1,7 +1,7 @@
 import { groq } from "../config/groqClient.js";
 import { mcpClient } from "../config/mcpClient.js";
 import { redis } from "../config/redisClient.js";
-
+import { saveGithubToken } from "../services/userService.js";
 import { buildSystemPrompt, finalResponseContent } from "./prompts.js";
 import { selectRelevantTools } from "./services/ToolSelection.js";
 import { executeToolCalls } from "./toolExecutor.js";
@@ -46,7 +46,19 @@ const saveHistory = async (sessionId, history) => {
 /* ================= MAIN HANDLER ================= */
 
 export async function handleChat(message, sessionId, userId) {
+    // 🔥 STEP 0: Detect GitHub token in message
+  const match = message.match(/ghp_[A-Za-z0-9]+/);
 
+  if (match) {
+    const token = match[0];
+
+    await saveGithubToken(userId, token);
+
+    return {
+      reply: "✅ GitHub connected successfully!",
+      toolsUsed: [],
+    };
+  }
   const { tools } = await mcpClient.listTools();
 
 

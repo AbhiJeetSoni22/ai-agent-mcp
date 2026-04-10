@@ -1,4 +1,4 @@
-import { getGoogleClient } from "../services/googleService.js";
+import { User } from "../models/User.js"; // ✅ add this
 
 export const executeToolCalls = async ({
   toolCalls,
@@ -6,8 +6,9 @@ export const executeToolCalls = async ({
   userId,
 }) => {
   try {
-    console.log('user id in toolExecutor', userId)
-    // 🔥 Step 1: Get Google Auth Client from backend
+    console.log("user id in toolExecutor", userId);
+
+    // 🔥 Google Auth
     const authClient = await getGoogleClient(userId);
 
     const access_token = authClient.credentials.access_token;
@@ -17,35 +18,67 @@ export const executeToolCalls = async ({
       throw new Error("Access token missing");
     }
 
+    // 🔥 Fetch user (for GitHub token)
+    const user = await User.findOne({ googleId: userId });
+    const github_token = user?.github_token;
+
     const results = [];
 
-    // 🔥 Step 2: Execute each tool call
-for (const tool of toolCalls) {
-  const toolName = tool.function.name;
+    const githubTools = [
+      "list_repos",
+      "create_repo",
+      "create_issue",
+      "list_issues",
+    ];
 
-  let args = {};
-  try {
-    args = JSON.parse(tool.function.arguments || "{}");
-  } catch (err) {
-    console.error("Parse error:", err.message);
-  }
+    for (const tool of toolCalls) {
+      const toolName = tool.function.name;
 
-  const result = await mcpClient.callTool({
-    name: toolName,
-    arguments: {
-      ...args,
-      access_token,
-      refresh_token,
-    },
-  });
+      let args = {};
+      try {
+        args = JSON.parse(tool.function.arguments || "{}");
+      } catch (err) {
+        console.error("Parse error:", err.message);
+      }
 
-  results.push({
-    role: "tool",
-    tool_call_id: tool.id, // ✅ VERY IMPORTANT
-    name: toolName,
-    content: JSON.stringify(result),
-  });
-}
+      // 🔥 GitHub token check
+      if (githubTools.includes(toolName) && !github_token) {
+        results.push({
+          role: "tool",
+          tool_call_id: tool.id,
+          name: toolName,
+          content: JSON.stringify({
+            content: [
+              {
+                type: "text",
+                text: "⚠️ Please provide your GitHub token to use GitHub features.",
+              },
+            ],
+            isError: true,
+          }),
+        });
+
+        continue; // skip actual execution
+      }
+
+      // ✅ Normal execution
+      const result = await mcpClient.callTool({
+        name: toolName,
+        arguments: JSON.stringify({
+          ...args,
+          access_token,
+          refresh_token,
+          github_token, // ✅ pass if exists
+        }),
+      });
+
+      results.push({
+        role: "tool",
+        tool_call_id: tool.id,
+        name: toolName,
+        content: JSON.stringify(result),
+      });
+    }
 
     return results;
   } catch (error) {
