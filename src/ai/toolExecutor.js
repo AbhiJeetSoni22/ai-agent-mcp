@@ -2,6 +2,23 @@ import { User } from "../models/User.js";
 import { getGoogleClient } from "../services/googleService.js";
 import { decrypt } from "../utils/crypto.js";
 
+
+// ✅ helper
+const safeParseArgs = (args) => {
+  if (!args) return {};
+
+  if (typeof args === "string") {
+    try {
+      return JSON.parse(args);
+    } catch (err) {
+      console.error("❌ JSON parse error:", err.message);
+      return {};
+    }
+  }
+
+  return args;
+};
+
 export const executeToolCalls = async ({
   toolCalls,
   mcpClient,
@@ -10,7 +27,7 @@ export const executeToolCalls = async ({
   try {
     console.log("user id in toolExecutor", userId);
 
-    // 🔥 Google Auth
+    // 🔥 Google Auth (Backend responsibility ✅)
     const authClient = await getGoogleClient(userId);
 
     const access_token = authClient.credentials.access_token;
@@ -20,12 +37,11 @@ export const executeToolCalls = async ({
       throw new Error("Access token missing");
     }
 
-    // 🔥 Fetch user (for GitHub token)
+    // 🔥 GitHub token (still backend responsibility ✅)
     const user = await User.findOne({ googleId: userId });
 
     let github_token = user?.github_token;
 
-    // 🔓 decrypt before use
     if (github_token) {
       github_token = decrypt(github_token);
     }
@@ -42,12 +58,8 @@ export const executeToolCalls = async ({
     for (const tool of toolCalls) {
       const toolName = tool.function.name;
 
-      let args = {};
-      try {
-        args = JSON.parse(tool.function.arguments || "{}");
-      } catch (err) {
-        console.error("Parse error:", err.message);
-      }
+      // ✅ FIX: safe parsing
+      const parsedArgs = safeParseArgs(tool.function.arguments);
 
       // 🔥 GitHub token check
       if (githubTools.includes(toolName) && !github_token) {
@@ -66,29 +78,44 @@ export const executeToolCalls = async ({
           }),
         });
 
-        continue; // skip actual execution
+        continue;
       }
 
-      // ✅ Normal execution
-      const result = await mcpClient.callTool({
-        name: toolName,
-        arguments: JSON.stringify({
-          ...args,
-          access_token,
-          refresh_token,
-          github_token, // ✅ pass if exists
-        }),
-      });
+      try {
+        // ✅ CRITICAL FIX: send OBJECT, NOT STRING
+        const result = await mcpClient.callTool({
+          name: toolName,
+          arguments: {
+            ...parsedArgs,
+            access_token,
+            refresh_token,
+            github_token,
+          },
+        });
 
-      results.push({
-        role: "tool",
-        tool_call_id: tool.id,
-        name: toolName,
-        content: JSON.stringify(result),
-      });
+        results.push({
+          role: "tool",
+          tool_call_id: tool.id,
+          name: toolName,
+          content: JSON.stringify(result),
+        });
+
+      } catch (err) {
+        console.error("❌ Tool call failed:", err.message);
+
+        results.push({
+          role: "tool",
+          tool_call_id: tool.id,
+          name: toolName,
+          content: JSON.stringify({
+            error: err.message,
+          }),
+        });
+      }
     }
 
     return results;
+
   } catch (error) {
     console.error("❌ Tool Execution Error:", error.message);
     throw error;

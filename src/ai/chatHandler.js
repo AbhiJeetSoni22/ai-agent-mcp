@@ -48,6 +48,7 @@ const saveHistory = async (sessionId, history) => {
 export async function handleChat(message, sessionId, userId) {
     // 🔥 STEP 0: Detect GitHub token in message
   const match = message.match(/ghp_[A-Za-z0-9]+/);
+  console.log('message is ',message)
 
   if (match) {
     const token = match[0];

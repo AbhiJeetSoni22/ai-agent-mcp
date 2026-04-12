@@ -1,3 +1,4 @@
+import { User } from "../models/User.js";
 import { encrypt } from "../utils/crypto.js";
 
 export const saveGithubToken = async (userId, token) => {
