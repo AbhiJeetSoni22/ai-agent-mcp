@@ -24,10 +24,10 @@ export const githubTools = [
       "List ALL repositories of the currently authenticated GitHub user. Do NOT ask for username. Always call this tool when user asks to list repos.",
 
     schema: z.object({
-  github_token: z.string().optional(),
-}).optional(),
+      github_token: z.string(),
+    }).optional(),
 
-    handler: async ({github_token}) => {
+    handler: async ({ github_token }) => {
       return await listRepos(github_token);
     },
   },
@@ -48,8 +48,8 @@ export const githubTools = [
       github_token: z.string().optional(),
     }),
 
-    handler: async ({ name ,github_token}) => {
-      return await createRepo(name,github_token);
+    handler: async ({ name, github_token }) => {
+      return await createRepo(name, github_token);
     },
   },
 
@@ -68,8 +68,8 @@ export const githubTools = [
       github_token: z.string().optional(),
     }),
 
-    handler: async ({ repo, title, body,github_token }) => {
-      return await createIssue(repo, title, body,github_token || "");
+    handler: async ({ repo, title, body, github_token }) => {
+      return await createIssue(repo, title, body, github_token || "");
     },
   },
 
@@ -86,8 +86,8 @@ export const githubTools = [
       github_token: z.string().optional(),
     }),
 
-    handler: async ({ repo,github_token }) => {
-      return await listIssues(repo,github_token);
+    handler: async ({ repo, github_token }) => {
+      return await listIssues(repo, github_token);
     },
   },
 ];
