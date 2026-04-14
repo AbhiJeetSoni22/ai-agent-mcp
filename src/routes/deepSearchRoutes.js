@@ -1,6 +1,5 @@
 import express from "express";
-import { deepSearchController } from "../deepsearch/controller/deepSearchController.js";
-
+import { deepSearchController } from "../controllers/deepSearchController.js"
 const router = express.Router();
 
 // POST /deep-search

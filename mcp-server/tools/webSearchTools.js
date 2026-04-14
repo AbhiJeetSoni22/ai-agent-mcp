@@ -86,24 +86,41 @@ export async function scraperTool(url) {
   try {
     const response = await axios.get(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Referer": "https://www.google.com/", // 🔥 important
       },
       timeout: 10000,
+      validateStatus: () => true, // ❗ handle non-200 manually
     });
+
+    // ❌ Handle blocked / failed responses
+    if (response.status !== 200) {
+      console.warn(`Scraper skipped (${response.status}): ${url}`);
+      return "";
+    }
 
     const html = response.data;
 
     const $ = cheerio.load(html);
 
     // ❌ remove unwanted elements
-    $("script, style, noscript").remove();
+    $("script, style, noscript, iframe, header, footer, nav, aside").remove();
 
     let text = $("body").text();
 
     // ✅ clean text
     text = text.replace(/\s+/g, " ").trim();
 
-    // ⚠️ limit content (VERY IMPORTANT)
+    // ❌ ignore too small content (garbage pages)
+    if (text.length < 200) {
+      return "";
+    }
+
+    // ⚠️ limit content
     const MAX_LENGTH = 3000;
     if (text.length > MAX_LENGTH) {
       text = text.substring(0, MAX_LENGTH);
@@ -112,7 +129,7 @@ export async function scraperTool(url) {
     return text;
 
   } catch (error) {
-    console.error("Scraper Error:", error.message);
+    console.warn("Scraper Error:", error.message);
     return "";
   }
 }
