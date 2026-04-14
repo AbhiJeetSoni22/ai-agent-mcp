@@ -1,8 +1,90 @@
 # AI Agent — MCP Backend
 
-This repository contains the backend pieces for the AI Agent project which integrates with a Model Context Protocol (MCP) server, Google APIs, and GROQ. The backend provides an Express API used by the frontend and manages MCP services and tools. It includes MongoDB for data persistence, Redis for caching, and comprehensive Google OAuth authentication.
+An intelligent AI-powered assistant backend that leverages the Model Context Protocol (MCP) to integrate multiple services including Google Calendar, Gmail, GitHub, and web search. Built with Node.js/Express, this backend orchestrates between GROQ's LLM capabilities and specialized tools to provide smart, context-aware assistance.
+
+**Key Features:**
+- 🔐 **Google OAuth Authentication** — Secure user authentication with JWT-based sessions
+- 🧠 **Intelligent Tool Selection** — GROQ-powered system that autonomously selects the best tools for each user query
+- 📅 **Multi-Service Integration** — Google Calendar, Gmail, GitHub, and web search capabilities
+- 💾 **Session Management** — Redis-based conversation history and caching
+- 🛡️ **Protected Routes** — JWT middleware for secure API endpoints
+- 🔗 **MCP Server** — Local MCP server handles tool execution and service integration
 
 **Note:** The file `helper-server.js` in the project root is not part of the main backend runtime for this repository and can be ignored for normal development and deployment.
+
+## Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables (see Environment Variables section below)
+cp .env.example .env
+
+# Start development server with hot reload
+npm run dev
+
+# Start production server
+npm start
+```
+
+The Express server runs on **port 5000** by default.
+
+## API Endpoints
+
+### Authentication
+- `GET /auth/google` — Initiate Google OAuth flow
+- `GET /auth/google/callback` — OAuth callback handler (redirects to frontend on success)
+- `GET /auth/me` — Get current authenticated user (requires valid token cookie)
+- `GET /auth/logout` — Clear authentication cookie and logout
+
+### Chat API
+- `POST /chat` — Send a message to the AI agent (protected route)
+  - **Headers:** `x-session-id` (optional, for conversation continuity)
+  - **Body:** `{ "message": "Your query here" }`
+  - **Response:** AI response with tool results and conversation history
+
+## Core Features
+
+### 🤖 AI Chat Handler
+The chat system intelligently processes user queries through a multi-step flow:
+1. **Tool Selection** — GROQ analyzes the query and selects relevant tools
+2. **Tool Execution** — Selected tools are executed via the MCP server
+3. **Response Generation** — GROQ generates a final response with context from executed tools
+4. **History Management** — Conversations are cached in Redis for continuity
+
+### 🔧 Integrated Tools & Services
+
+**Google Calendar**
+- List upcoming events
+- Create new events
+- Update existing events
+- Delete events
+- Support for event details, attendees, and reminders
+
+**Gmail**
+- Read and list emails
+- Send emails
+- Compose with attachments
+- Search emails
+- Manage inbox conversations
+
+**GitHub**
+- List repositories
+- View issues and pull requests
+- Create issues or PRs
+- Get repository statistics
+- Manage project collaboration
+
+**Web Search**
+- Powered by Tavily API
+- Real-time information retrieval
+- Search results with context and links
+
+### 💾 Data Persistence & Caching
+- **MongoDB** — User profiles, credentials, and persistent data
+- **Redis (Upstash)** — Session history (10 most recent messages, 1-hour TTL), conversation caching
+- **Encrypted Storage** — Google tokens and secrets are encrypted before database storage
 
 **Project Layout**
 - `src/` — main backend source
@@ -66,127 +148,354 @@ This repository contains the backend pieces for the AI Agent project which integ
 - `src/config/googleClient.js` — reads Google OAuth credentials from environment variables.
 
 **Environment variables**
-Create a `.env` file in the project root with at least the following values:
+Create a `.env` file in the project root with the following values:
 
 **Google OAuth & APIs**
-- `GOOGLE_CLIENT_ID` — Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET` — Google OAuth client secret
-- `GOOGLE_REFRESH_TOKEN` — refresh token for Google API service account access
+- `GOOGLE_CLIENT_ID` — OAuth client ID from [Google Cloud Console](https://console.cloud.google.com/)
+- `GOOGLE_CLIENT_SECRET` — OAuth client secret
+- `GOOGLE_REFRESH_TOKEN` — Refresh token for service account API access (use `npm run token` to generate)
+- `GOOGLE_OAUTH_REDIRECT_URI` — Redirect URI for OAuth callback (default: `http://localhost:5000/auth/google/callback`)
 
 **Database & Caching**
-- `MONGO_URI` — MongoDB connection URI (e.g., `mongodb://localhost:27017/ai-agent`)
-- `REDIS_URL` — Upstash Redis URL
-- `REDIS_TOKEN` — Upstash Redis token
+- `MONGO_URI` — MongoDB connection string (e.g., `mongodb://localhost:27017/ai-agent`)
+- `REDIS_URL` — Upstash Redis connection URL
+- `REDIS_TOKEN` — Upstash Redis authentication token
 
-**AI & External APIs**
-- `GROQ_API_KEY` — GROQ API key for LLM operations
+**AI & External Services**
+- `GROQ_API_KEY` — GROQ API key for LLM operations (get from [console.groq.com](https://console.groq.com))
 - `TAVILY_API_KEY` — Tavily API key for web search functionality
+- `GITHUB_TOKEN` — (Optional) GitHub API token for enhanced GitHub integrations
 
 **Security**
-- `JWT_SECRET` — secret key for signing JWT tokens in cookies
+- `JWT_SECRET` — Secret key for signing JWT tokens (use a strong random string)
+- `ENCRYPTION_KEY` — Encryption key for storing sensitive tokens (16-character string)
+- `ENCRYPTION_IV` — Encryption initialization vector (16-character string)
 
-**Optional**
-- `GITHUB_TOKEN` — GitHub API token (optional, for GitHub integration)
+**Development**
+- `NODE_ENV` — `development` or `production`
+- `PORT` — Server port (default: 5000)
+- `FRONTEND_URL` — Frontend URL for CORS and redirects (default: `http://localhost:5173`)
 
-Other env values may be required depending on additional integrations you enable.
+All marked fields are required for the application to function properly. Check `.env.example` in the repository for a template.
 
-**Authentication & User Management**
-This backend includes comprehensive Google OAuth authentication with JWT-based sessions and persistent user data in MongoDB.
+## Authentication & Session Management
 
-**OAuth Flow:**
+### Google OAuth Flow
+The backend implements a complete OAuth 2.0 flow with JWT-based sessions:
+
+1. **Initiation:** User clicks "Login with Google" on the frontend
+2. **Consent Screen:** User is redirected to Google's OAuth consent screen
+3. **Authorization:** After user approval, Google redirects to the callback endpoint
+4. **Token Exchange:** Backend exchanges authorization code for tokens
+5. **User Creation:** New user is created in MongoDB with encrypted tokens
+6. **Session:** JWT token is issued as a secure, httpOnly cookie
+7. **Redirect:** User is redirected to the frontend chat interface
+
+**OAuth Endpoints:**
 - `GET /auth/google` — redirects the user to Google OAuth consent screen
-- `GET /auth/google/callback` — handles Google callback, creates/updates user in database, encrypts tokens, issues a `token` cookie, and redirects to frontend at `http://localhost:5173/chat`
+- `GET /auth/google/callback` — handles Google callback, creates/updates user in database, encrypts tokens, issues a `token` cookie, and redirects to frontend at `http://localhost:5173`
+
+### User Data Storage
+- User profiles stored in MongoDB with encrypted OAuth tokens
+- GitHub tokens can be added dynamically during chat (detected by token pattern)
+- All sensitive credentials are encrypted using AES-256 encryption before storage
+- Token refresh handled automatically
+
+### Protected Routes
+All protected routes require JWT authentication via the `authMiddleware.js`:
+- Validates token from request cookies
+- Attaches user object to request (`req.user`)
+- Returns 401 if token is invalid or missing
+
+**Protected Routes:**
 - `GET /auth/me` — returns the authenticated user when the request includes a valid cookie
+- `POST /chat` — requires authenticated user
 - `GET /auth/logout` — clears the auth cookie and logs the user out
 
-**User Data Storage:**
-User information is stored in MongoDB with the following fields:
-- `googleId` — Google ID
-- `email` — user email
-- `name` — user display name
-- `access_token` — encrypted Google access token
-- `refresh_token` — encrypted Google refresh token
-- `expiry_date` — token expiration timestamp
-- `github_token` — optional GitHub token for GitHub integration
+## Chat System Architecture
 
-Tokens are encrypted using AES-256 cipher before storage (see `src/utils/crypto.js`).
-
-**Authentication middleware** (implemented in `src/middleware/authMiddleware.js`):
-- Verifies JWT tokens stored in HTTP-only cookies named `token`
-- Protects routes from unauthorized access
-- Decrypts user tokens for API calls
-
-**CORS and session support**
-The server is configured in `src/server.js` to allow requests from `http://localhost:5173` and to accept credentials so the frontend can send and receive auth cookies.
-
-**MCP Services & Tools**
-The backend provides multiple integrated services through the MCP server:
-
-**Services** (mcp-server/services/):
-- `calendarService.js` — Google Calendar operations via calendar tools
-- `gmailService.js` — Gmail operations (read and send emails) via gmail tools
-- `githubService.js` — GitHub operations (repositories, issues, PRs) via github tools
-
-**Tools** (mcp-server/tools/):
-- `calendarTools.js` — list, create, and update calendar events
-- `gmailTools.js` — read emails and send messages
-- `githubTools.js` — search repositories, list issues, and manage PRs
-- `webSearchTools.js` — web search using Tavily API for real-time information
-
-**Tool Selection:**
-The `src/ai/services/ToolSelection.js` module uses GROQ to intelligently analyze user queries and select only the most relevant tools. This reduces unnecessary API calls and improves response quality.
-
-**Install & Run**
-Prerequisites: Node.js (v18+ recommended) and npm.
-
-Install dependencies:
-
+### Request Flow
 ```
+User Message
+    ↓
+Chat Handler (saves to Redis history)
+    ↓
+Tool Selection (GROQ analyzes query → selects tools)
+    ↓
+Tool Executor (executes MCP tools)
+    ↓
+GROQ Response Generator (composes final response)
+    ↓
+Response to Client
+```
+
+### Session Management
+- Each chat session gets a unique `sessionId` (via `x-session-id` header)
+- Conversation history stored in Redis with 1-hour TTL
+- Last 10 messages kept per session for context
+- History helps AI understand conversation context and continuity
+
+### Tool Execution Pipeline
+1. **Tool Selection** — GROQ determines which tools are relevant to the user's query
+2. **Parallel Execution** — Multiple tools can execute simultaneously
+3. **Result Aggregation** — All tool results are collected
+4. **Response Generation** — GROQ uses tool results to generate a contextualized response
+5. **Error Handling** — Tool failures are gracefully handled with fallback responses
+
+## User Data Model
+
+User information is stored in MongoDB with the following fields (see `src/models/User.js`):
+- `googleId` — Google ID for OAuth identification
+- `email` — user email address
+- `name` — user display name
+- `picture` — user profile picture URL
+- `access_token` — encrypted Google OAuth access token
+- `refresh_token` — encrypted Google OAuth refresh token
+- `expiry_date` — token expiration timestamp
+- `github_token` — optional GitHub token for GitHub API integration
+- `createdAt` — account creation timestamp
+- `updatedAt` — last update timestamp
+
+**Security Note:** All tokens are encrypted using AES-256 cipher before storage (see `src/utils/crypto.js`). Decryption happens automatically when needed.
+
+## Project Layout## Development & Deployment
+
+### Prerequisites
+- Node.js v18+ and npm
+- MongoDB instance (local or cloud)
+- Redis/Upstash account for caching
+- Google Cloud project with OAuth credentials
+- GROQ API key
+- Tavily API key for web search
+
+### Setup Instructions
+
+1. **Install dependencies:**
+```bash
 npm install
 ```
 
-Run in development (auto-reload via `nodemon`):
+2. **Configure environment variables:**
+Create a `.env` file in the project root with all required variables listed in the Environment Variables section.
 
+3. **Generate Google refresh token:**
+```bash
+npm run token
 ```
+
+### Running the Application
+
+**Development mode** (with auto-reload via nodemon):
+```bash
 npm run dev
 ```
 
-Run production:
-
-```
+**Production mode:**
+```bash
 npm start
 ```
 
-Useful scripts from `package.json`:
-- `npm run token` — runs `scripts/getRefreshToken.js` to help obtain Google refresh tokens.
+The server will start on port 5000 (or custom `PORT` from `.env`).
 
-**Development notes**
-- **Database:** MongoDB is required for user storage. Initialize connection with `src/config/db.js` — called automatically on server startup.
-- **Caching:** Redis (Upstash) is used for caching. Initialize with `src/config/redisClient.js`.
-- **User Tokens:** Google tokens are encrypted before storage using AES-256 cipher (see `src/utils/crypto.js`). Decryption happens on-demand in API calls.
-- **MCP Client:** Created in `src/config/mcpClient.js` and expects `mcp-server/mcpServer.js` to be available; this file is launched as a child process using Node.
-- **Services:** Live under `mcp-server/services/` and use helpers in `mcp-server/tools/` for auth and API calls.
-- **Tool Selection:** The `src/ai/services/ToolSelection.js` module analyzes user queries using GROQ and returns an array of relevant tool names to execute.
-- **To add a new tool/service:** follow the existing patterns in `mcp-server/tools` and `mcp-server/services`, create the service/tool pair, and register them with the MCP server in `mcp-server/mcpServer.js`.
+### Available Scripts
+- `npm run dev` — Start development server with hot reload
+- `npm run start` — Start production server
+- `npm run token` — Generate/update Google refresh tokens via browser OAuth flow
+- `npm run client` — Run the MCP client (if configured)
 
-**Troubleshooting**
-- **MongoDB connection fails:** Ensure `MONGO_URI` is set correctly in `.env` and MongoDB is running.
-- **Redis connection fails:** Ensure `REDIS_URL` and `REDIS_TOKEN` are set correctly for Upstash Redis.
-- **MCP client fails to connect:** Check that `mcp-server/mcpServer.js` has no syntax issues and that Node can spawn child processes on your platform.
-- **Google OAuth fails:** Ensure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` are correct in `.env`, and the callback URL is registered in Google Cloud Console.
-- **Google API calls fail:** Verify `GOOGLE_REFRESH_TOKEN` is valid and that the required OAuth scopes are requested (Gmail, Calendar).
-- **Tool selection returns empty array:** Check that `GROQ_API_KEY` is valid and that tool descriptions are clear in the tool definitions.
-- **Token encryption/decryption errors:** Verify `JWT_SECRET` is set and hasn't changed between sessions.
+## Architecture Details
 
-**Next steps & Tips**
-- **Logging:** Add detailed logging in `src/config/mcpClient.js` to surface child process errors and MCP communication issues.
-- **Error handling:** Wrap tool execution with try-catch in `src/ai/toolExecutor.js` to gracefully handle API failures.
-- **Token refresh:** Implement automatic Google token refresh when `expiry_date` is reached (consider using a cron job).
-- **Rate limiting:** Add rate limiting middleware to prevent abuse of API endpoints, especially tool execution.
-- **Security:** Store secrets securely for production (e.g., use AWS Secrets Manager, Azure Key Vault, or similar rather than a local `.env`).
-- **Database indexes:** Add MongoDB indexes on frequently queried fields like `googleId` and `email` for better performance.
-- **Caching strategy:** Use Redis to cache tool results and user preferences to reduce API calls.
-- **Testing:** Add unit tests for `ToolSelection.js`, `toolExecutor.js`, and authentication controllers.
+### Component Overview
+```
+Express Server (Port 5000)
+  ├── Routes
+  │   ├── /auth (Google OAuth, user management)
+  │   └── /chat (AI chat with tool execution)
+  ├── Middleware
+  │   └── JWT Authentication
+  └── Core Services
+      ├── ChatHandler (orchestrates AI responses)
+      ├── ToolSelection (GROQ-powered tool choosing)
+      └── ToolExecutor (executes MCP tools)
+
+MCP Server (Child Process)
+  ├── Tools
+  │   ├── Calendar
+  │   ├── Gmail
+  │   ├── GitHub
+  │   └── Web Search
+  └── Services
+      ├── Google APIs
+      ├── GitHub API
+      └── Tavily Search
+
+Data Layer
+  ├── MongoDB (persistent user data)
+  └── Redis (conversation caching)
+```
+
+### Key Components
+
+**ChatHandler** (`src/ai/chatHandler.js`)
+- Orchestrates the complete chat flow
+- Manages conversation history in Redis
+- Handles GitHub token detection and storage
+- Integrates tool selection, execution, and response generation
+
+**ToolSelection** (`src/ai/services/ToolSelection.js`)
+- Analyzes user queries using GROQ LLM
+- Intelligently selects relevant tools to execute
+- Reduces unnecessary API calls
+- Improves response quality and context awareness
+
+**ToolExecutor** (`src/ai/toolExecutor.js`)
+- Executes selected tools via MCP server
+- Handles tool result aggregation
+- Manages errors gracefully
+- Provides fallback responses on failure
+
+**MCP Server** (`mcp-server/mcpServer.js`)
+- Manages tool registration and execution
+- Interfaces with external APIs (Google, GitHub, Tavily)
+- Runs as a child process (stdio transport)
+- Auto-launched by `src/config/mcpClient.js`
+
+## Frontend Integration
+
+### CORS & Origin Configuration
+The backend accepts requests from the configured frontend URL:
+- Default: `http://localhost:5173` (Vite)
+- Configurable via `FRONTEND_URL` environment variable
+- Credentials enabled for cookie transmission
+
+### Cookie-Based Authentication
+- Auth tokens stored in secure, httpOnly cookies
+- Cookies automatically sent with requests (via `credentials: 'include'`)
+- Frontend must preserve cookies across requests
+
+### Sample Chat Request
+```javascript
+const response = await fetch('http://localhost:5000/chat', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-session-id': 'your-session-id'
+  },
+  body: JSON.stringify({
+    message: 'What are my upcoming calendar events?'
+  })
+});
+
+const result = await response.json();
+console.log(result); // Contains AI response and tool results
+```
+
+## Adding New Tools & Services
+
+### Steps to Add a New Tool:
+
+1. **Create service** in `mcp-server/services/newService.js`:
+```javascript
+export async function performAction(params) {
+  // Your implementation
+  return result;
+}
+```
+
+2. **Create tool wrapper** in `mcp-server/tools/newTools.js`:
+```javascript
+export const newTools = [
+  {
+    name: 'action_name',
+    description: 'Detailed description for LLM',
+    schema: { /* input schema */ },
+    handler: performAction
+  }
+];
+```
+
+3. **Register in MCP server** (`mcp-server/mcpServer.js`):
+```javascript
+import { newTools } from './tools/newTools.js';
+const allTools = [...existingTools, ...newTools];
+```
+
+4. **Update ToolSelection** prompts if needed for better tool selection.
+
+## Troubleshooting
+
+### Common Issues & Solutions
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| MongoDB connection timeout | Invalid URI or network issue | Check `MONGO_URI` in `.env`, verify network access |
+| Redis connection failed | Upstash credentials invalid | Verify `REDIS_URL` and `REDIS_TOKEN` |
+| OAuth callback fails | Redirect URI mismatch | Register correct URL in Google Cloud Console |
+| MCP tools not executing | Process spawn failure | Check Node permissions, verify `mcpServer.js` syntax |
+| Empty tool selection | GROQ API issue | Verify `GROQ_API_KEY`, check API quota and rate limits |
+| Google API calls fail | Invalid refresh token | Run `npm run token` to regenerate |
+| Token encryption errors | Mismatched encryption keys | Ensure `JWT_SECRET`, `ENCRYPTION_KEY`, and `ENCRYPTION_IV` haven't changed |
+
+### Debug Logging
+Enable detailed logging by checking:
+- `src/config/mcpClient.js` — MCP connection issues
+- `src/ai/chatHandler.js` — Chat flow and Redis operations
+- `src/ai/services/ToolSelection.js` — Tool selection logic
+- `src/ai/toolExecutor.js` — Tool execution errors
+
+## Performance Optimization
+
+### Redis Caching Strategy
+- Conversation history cached for 1 hour per session
+- Last 10 messages retained for context
+- Reduces database queries and improves response speed
+
+### Tool Execution Pipeline
+- Tools execute in parallel when possible
+- Results aggregated before response generation
+- Timeouts prevent hanging requests
+
+### Database Optimization
+- Add indexes on `googleId` and `email` fields
+- Use connection pooling for MongoDB
+- Monitor query performance regularly
+
+## Security Best Practices
+
+1. **Environment Variables**: Never commit `.env` to version control
+2. **Token Encryption**: All user tokens encrypted before storage (AES-256)
+3. **HTTPS**: Use HTTPS in production
+4. **Rate Limiting**: Implement per-user rate limits for chat endpoint
+5. **Secret Management**: Use secure vaults (AWS Secrets Manager, etc.) in production
+6. **CORS**: Restrict to specific frontend domains
+7. **Token Rotation**: Implement automatic Google token refresh
+8. **Input Validation**: Sanitize all user inputs in chat messages
+
+## Deployment Considerations
+
+### Environment-Specific Setup
+- Ensure all services (MongoDB, Redis) are accessible
+- Use strong, unique passwords for databases
+- Configure proper network security groups/firewalls
+- Set `NODE_ENV=production` in production environments
+
+### Docker Deployment
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+EXPOSE 5000
+CMD ["npm", "start"]
+```
+
+### Docker Compose (with MongoDB & Redis)
+See example `docker-compose.yml` for a complete stack setup.
 
 ---
-Updated: April 2026 — Backend now includes MongoDB persistence, Redis caching, intelligent tool selection, and comprehensive Google OAuth.
+
+**Last Updated:** April 2026  
+**Version:** 1.0.0  
+**Status:** Production Ready
