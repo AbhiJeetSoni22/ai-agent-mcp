@@ -123,27 +123,30 @@ export const createDeepSearchPrompt= (query,combinedContent)=>{
       Sources:
       ${combinedContent}
 
-      Instructions:
-      - First give a proper explanation of the topic
-      - Then provide key insights in bullet points
-      - Keep balance between detail and readability (not  short)
-      - Use simple language
-      - Do not hallucinate
-      - Use information from sources only
+   Instructions:
+- Start with a clear explanation (4–5 lines)
+- Then provide key insights with explanation
+- Keep answer slightly detailed but not short
+- Use simple language
+- Avoid repetition
+- Do not hallucinate
+- If data is insufficient, say "Limited data available"
 
-      Format:
+Format:
 
-      📌 Detailed Answer:
-      (4–6 lines explanation)
+📌 Detailed Answer:
+(Explanation)
 
-      📊 Key Insights:
-      - point 1 (with explanation)
-      - point 2 (with explanation)
-      - point 3
+📊 Key Insights:
+- point (with explanation)
+- point (with explanation)
 
-      🔗 Sources:
-      1. link
-      2. link
-      `
+📉 Limitations:
+(optional)
+
+🔗 Sources:
+1. link
+2. link
+`
 }
      
