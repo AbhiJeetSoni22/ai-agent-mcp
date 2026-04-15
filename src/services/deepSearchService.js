@@ -1,9 +1,12 @@
-import { runDeepSearchAgent } from "../agent/deepSearchAgent.js";
+
+
+import { runLangChainAgent } from "../agent/langchainAgent.js";
+
+
 
 export const deepSearchService = async (query) => {
   try {
-    const result = await runDeepSearchAgent(query);
-    return result;
+    return await runLangChainAgent(query);
   } catch (error) {
     throw error;
   }
