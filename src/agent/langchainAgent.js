@@ -1,57 +1,70 @@
 import { ChatGroq } from "@langchain/groq";
-import { createToolCallingAgent } from "langchain/agents";
-import { AgentExecutor } from "langchain/agents";
+import { createAgent } from "langchain";
 
 import { searchTool, scrapeTool } from "./langchainTools.js";
 
-// 🤖 LLM setup
+// 🤖 LLM
 const llm = new ChatGroq({
     apiKey: process.env.GROQ_API_KEY,
     model: "llama-3.3-70b-versatile",
-    temperature: 0.1,
+    temperature: 0.3,
 });
 
+// 🧠 Agent create (NEW API)
+const agent = createAgent({
+    model: llm,
+    tools: [searchTool, scrapeTool],
+
+    systemPrompt: `
+    You are an expert research assistant.
+
+    You MUST follow this output format strictly.
+
+    Instructions:
+    - Always start with a 5-6 line explanation
+    - Then give key insights in bullet points
+    - ALWAYS include sources at the end
+    - Do NOT skip any section
+
+    Format:
+
+    📌 Detailed Answer:
+    (5–6 lines explanation)
+
+    📊 Key Insights:
+    - point 1 (with explanation)
+    - point 2 (with explanation)
+    - point 3
+
+    🔗 Sources:
+    1. full URL
+    2. full URL
+
+    Rules:
+    - Sources must be real URLs from tool results
+    - Do not invent links
+    - If no sources found, say "No sources available"
+    - Never return plain paragraph answer
+    `,
+    maxIterations: 3
+});
+
+// 🚀 MAIN FUNCTION
 export async function runLangChainAgent(query) {
     try {
-        const tools = [searchTool, scrapeTool];
-
-        const agent = await createToolCallingAgent({
-            llm,
-            tools,
-            systemPrompt: `
-                You are a smart research agent.
-
-                Rules:
-                - Always call search_web first for unknown queries
-                - Use scrape_webpage only for top 1-2 important links
-                - Do NOT scrape all links
-                - Stop once you have enough information
-                - Keep tool usage minimal
-                - Avoid repeated tool calls
-
-                Goal:
-                Provide a high-quality, concise answer with sources.
-                `,
-        });
-        const executor = new AgentExecutor({
-            agent,
-            tools,
-            verbose: true, // 🔥 logs for debugging
-            maxIterations: 4,
+        const result = await agent.invoke({
+            messages: [
+                {
+                    role: "user",
+                    content: query,
+                },
+            ],
         });
 
-        const result = await executor.invoke({
-            input: query,
-        });
-
-        return result.output;
+        // last message = final answer
+        return result.messages.at(-1)?.content || "No response";
 
     } catch (error) {
-    //         console.error("LangChain failed, fallback triggered");
-
-    // // 🔥 fallback to manual agent
-    // const { runDeepSearchAgent } = await import("./deepSearchAgent.js");
-    // return await runDeepSearchAgent(query);
         console.error("LangChain Agent Error:", error.message);
         return "Deep search failed.";
     }
