@@ -1,10 +1,10 @@
 import express from "express";
 import { handleChat } from "../ai/chatHandler.js";
-import {verifyUser} from "../middleware/authMiddleware.js";
+import {authMiddleware} from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", verifyUser, async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
   try {
     const message = req.body.message;
     const sessionId = req.headers["x-session-id"] || "default";
