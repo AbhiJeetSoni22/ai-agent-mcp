@@ -44,6 +44,12 @@ The Express server runs on **port 5000** by default.
   - **Body:** `{ "message": "Your query here" }`
   - **Response:** AI response with tool results and conversation history
 
+### Deep Search API (NEW)
+- `POST /deep-search` — Perform an in-depth search with content scraping and analysis
+  - **Body:** `{ "query": "Your search query here" }`
+  - **Response:** Detailed search results with ranked sources, key insights, and full URLs
+  - **Note:** Uses LangChain agent with Groq LLM for intelligent search and content analysis
+
 ## Core Features
 
 ### 🤖 AI Chat Handler
@@ -52,6 +58,35 @@ The chat system intelligently processes user queries through a multi-step flow:
 2. **Tool Execution** — Selected tools are executed via the MCP server
 3. **Response Generation** — GROQ generates a final response with context from executed tools
 4. **History Management** — Conversations are cached in Redis for continuity
+
+### 🔎 Deep Search Engine (NEW)
+The deep search feature provides in-depth research capabilities using LangChain and Groq:
+1. **Query Analysis** — LangChain agent understands complex research queries
+2. **Web Search** — Performs initial search using Tavily API to find relevant sources
+3. **Source Ranking** — LLM intelligently ranks search results by relevance and quality
+4. **Content Scraping** — Extracts and analyzes content from top-ranked sources
+5. **Synthesis** — Generates detailed answers with key insights and source citations
+6. **Trusted Sources** — Prioritizes results from academic, tech, and authoritative domains (MIT, Microsoft, OpenAI, GitHub, arXiv, BBC, etc.)
+
+**Features:**
+- Duplicate content detection and removal
+- Quality source filtering for reliability
+- Parallel content scraping for speed
+- Structured output with detailed explanations, key insights, and sources
+
+### 🧠 Agent Architecture (NEW)
+The backend now features a dual-agent architecture for enhanced AI capabilities:
+
+**Main Chat Agent (MCP-based)**
+- Uses the Model Context Protocol for tool integration
+- Integrates with Google Calendar, Gmail, GitHub, and web search
+- Intelligent tool selection via GROQ
+
+**Deep Search Agent (LangChain-based)**
+- Powered by LangChain framework with Groq LLM
+- Specialized for research and in-depth information retrieval
+- Tools: Web search and content scraping
+- Formats output with structured insights and citations
 
 ### 🔧 Integrated Tools & Services
 
@@ -92,8 +127,10 @@ The chat system intelligently processes user queries through a multi-step flow:
   - `routes/` — API routes
     - `auth.route.js` — Google OAuth and authentication endpoints
     - `chat.route.js` — chat API route used by the frontend
+    - `deepSearchRoutes.js` — deep search API routes (NEW)
   - `controllers/` — request handlers
     - `authController.js` — handles Google OAuth flow, login, callback, and logout
+    - `deepSearchController.js` — handles deep search requests (NEW)
   - `models/` — MongoDB schemas
     - `User.js` — user data model with Google OAuth and GitHub token support
   - `middleware/` — Express middleware
@@ -101,11 +138,16 @@ The chat system intelligently processes user queries through a multi-step flow:
   - `services/` — business logic
     - `googleService.js` — Google API utilities
     - `userService.js` — user management and database operations
+    - `deepSearchService.js` — coordinates deep search operations (NEW)
   - `ai/` — AI-related code
     - `chatHandler.js` — route handler and chat orchestration
-    - `prompts.js` — prompt templates for the AI agent
+    - `prompts.js` — prompt templates for the AI agent and deep search
     - `toolExecutor.js` — executes tools for the agent
     - `services/ToolSelection.js` — GROQ-powered intelligent tool selection based on user queries
+  - `agent/` — Advanced AI agents (NEW)
+    - `deepSearchAgent.js` — deep search agent with ranking and scraping logic
+    - `langchainAgent.js` — LangChain-based agent for research tasks
+    - `langchainTools.js` — LangChain tool definitions (search, scrape)
   - `config/` — client and service initialization
     - `db.js` — MongoDB connection and initialization
     - `redisClient.js` — Redis client for caching (Upstash)
@@ -139,13 +181,17 @@ The chat system intelligently processes user queries through a multi-step flow:
 **Key files to know**
 - `src/server.js` — starts the Express API on port 5000 and mounts routes.
 - `src/routes/auth.route.js` — Google OAuth routes and callback handler.
+- `src/routes/deepSearchRoutes.js` — Deep search endpoint route mapping (NEW).
 - `src/controllers/authController.js` — handles the complete OAuth flow, user creation, token encryption, and session management.
+- `src/controllers/deepSearchController.js` — handles deep search API requests (NEW).
 - `src/config/db.js` — initializes MongoDB connection on app startup.
 - `src/config/redisClient.js` — initializes Upstash Redis client for caching.
 - `src/models/User.js` — defines user schema with support for Google OAuth and GitHub tokens.
 - `src/ai/services/ToolSelection.js` — uses GROQ to intelligently select relevant tools based on user queries.
+- `src/agent/langchainAgent.js` — LangChain agent orchestrator for deep search (NEW).
+- `src/agent/deepSearchAgent.js` — Advanced search agent with ranking and content scraping (NEW).
+- `src/services/deepSearchService.js` — Service layer for deep search operations (NEW).
 - `src/config/mcpClient.js` — launches the MCP server process from `mcp-server/mcpServer.js` using a stdio transport.
-- `src/config/googleClient.js` — reads Google OAuth credentials from environment variables.
 
 **Environment variables**
 Create a `.env` file in the project root with the following values:
@@ -258,7 +304,7 @@ User information is stored in MongoDB with the following fields (see `src/models
 
 **Security Note:** All tokens are encrypted using AES-256 cipher before storage (see `src/utils/crypto.js`). Decryption happens automatically when needed.
 
-## Project Layout## Development & Deployment
+## Development & Deployment
 
 ### Prerequisites
 - Node.js v18+ and npm
