@@ -69,7 +69,7 @@ res.cookie("token", token, {
   secure: false, // production me true
 });
 
-res.redirect(`${process.env.FRONTEND_URL}/chat`);
+res.redirect(process.env.FRONTEND_URL);
 
    
   } catch (err) {
