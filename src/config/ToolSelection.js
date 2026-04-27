@@ -1,4 +1,4 @@
-import { groq } from "../../config/groqClient.js";
+import { groq } from "./groqClient.js";
 
 export async function selectRelevantTools(message, tools) {
   const toolList = tools.map((t) => ({
