@@ -1,9 +1,10 @@
 import { groq } from "../config/groqClient.js";
 import { mcpClient } from "../config/mcpClient.js";
 import { redis } from "../config/redisClient.js";
+import { selectRelevantTools } from "../config/ToolSelection.js";
 import { saveGithubToken } from "../services/userService.js";
 import { buildSystemPrompt, finalResponseContent } from "./prompts.js";
-import { selectRelevantTools } from "./services/ToolSelection.js";
+
 import { executeToolCalls } from "./toolExecutor.js";
 
 /* ================= REDIS MEMORY ================= */
