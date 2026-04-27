@@ -4,7 +4,7 @@ import {
   createRepo,
   createIssue,
   listIssues,
-} from "../services/githubService.js";
+} from "../../src/services/githubService.js";
 
 /*
 =====================================

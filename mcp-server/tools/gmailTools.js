@@ -3,7 +3,7 @@ import {
   sendEmail,
   getUnreadEmails,
   getEmailContent,
-} from "../services/gmailService.js";
+} from "../../src/services/gmailService.js";
 
 /*
 =====================================

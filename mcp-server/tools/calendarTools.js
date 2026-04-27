@@ -4,7 +4,7 @@ import {
   createCalendarEvent,
   deleteCalendarEvent,
   updateCalendarEvent,
-} from "../services/calendarService.js";
+} from "../../src/services/calendarService.js";
 
 /**
  * MCP Tool Definitions
