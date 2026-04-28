@@ -66,7 +66,8 @@ export const googleCallback = async (req, res) => {
 // 🍪 Send cookie
 res.cookie("token", token, {
   httpOnly: true,
-  secure: false, // production me true
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 });
 
 res.redirect(process.env.FRONTEND_URL);
