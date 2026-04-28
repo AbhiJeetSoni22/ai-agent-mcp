@@ -16,4 +16,3 @@ export const mcpClient = new Client({
 
 await mcpClient.connect(transport);
 
-console.log("✅ Connected to MCP server");
