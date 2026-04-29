@@ -25,7 +25,6 @@ export const executeToolCalls = async ({
   userId,
 }) => {
   try {
-    console.log("user id in toolExecutor", userId);
 
     // 🔥 Google Auth (Backend responsibility ✅)
     const authClient = await getGoogleClient(userId);
