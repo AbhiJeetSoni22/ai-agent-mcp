@@ -38,43 +38,48 @@ export const googleCallback = async (req, res) => {
 
     const { data } = await oauth2.userinfo.get();
 
+    // 🔥 FIX: get existing user first
+    const existingUser = await User.findOne({ googleId: data.id });
+
     // 🔥 Save or update user
- const user = await User.findOneAndUpdate(
-  { googleId: data.id },
-  {
-    email: data.email,
-    name: data.name,
+    const user = await User.findOneAndUpdate(
+      { googleId: data.id },
+      {
+        email: data.email,
+        name: data.name,
 
-    access_token: tokens.access_token
-      ? encrypt(tokens.access_token)
-      : null,
+        access_token: tokens.access_token
+          ? encrypt(tokens.access_token)
+          : null,
 
-    refresh_token: tokens.refresh_token
-      ? encrypt(tokens.refresh_token)
-      : existingUser?.refresh_token || null,
+        refresh_token: tokens.refresh_token
+          ? encrypt(tokens.refresh_token)
+          : existingUser?.refresh_token || null,
 
-    expiry_date: tokens.expiry_date,
-  },
-  { upsert: true, new: true }
-);
+        expiry_date: tokens.expiry_date,
+      },
+      { upsert: true, returnDocument: "after" } // 🔥 updated
+    );
+
+    // 🔐 JWT
     const token = jwt.sign(
-  { userId: user.googleId },
-  process.env.JWT_SECRET,
-  { expiresIn: "7d" }
-);
+      { userId: user.googleId },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-// 🍪 Send cookie
-res.cookie("token", token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-});
+    // 🍪 Cookie (PRODUCTION SAFE)
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
 
-res.redirect(process.env.FRONTEND_URL);
+    // 🔁 Redirect to frontend
+    res.redirect(process.env.FRONTEND_URL);
 
-   
   } catch (err) {
-    console.log(err);
+    console.error("OAuth Error:", err); // 🔥 better logging
     res.status(500).send("OAuth Error");
   }
 };
